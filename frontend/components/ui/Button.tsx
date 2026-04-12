@@ -36,6 +36,8 @@ export function Button({
         `${variants[variant]} ${sizes[size]} ${className}`.trim()
       }
       {...props}
-    />
+    >
+      {children}
+    </button>
   );
 }
