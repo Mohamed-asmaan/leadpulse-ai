@@ -1,9 +1,0 @@
-{
-  "extends": "../../tsconfig.base.json",
-  "compilerOptions": {
-    "noEmit": true,
-    "verbatimModuleSyntax": false
-  },
-  "include": ["src/**/*.ts"],
-  "exclude": ["**/__tests__/**", "**/*.test.ts"]
-}
