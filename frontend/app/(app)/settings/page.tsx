@@ -94,31 +94,24 @@ export default function SettingsPage() {
           <SlidersHorizontal className="h-4 w-4 text-amber-300" />
           Performance lab (mock dataset)
         </div>
-        {process.env.NODE_ENV === "production" ? (
-          <p className="text-xs text-emerald-200/90 border border-emerald-900/40 rounded-lg px-3 py-2 bg-emerald-950/20 leading-relaxed">
-            <strong>Live data only:</strong> mock leads are disabled in this production build. Lead Management,
-            Pipeline, and Analytics always call your API (e.g. Postgres on Render).
-          </p>
-        ) : (
-          <>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              For a <strong>production-like</strong> demo, keep this <strong>off</strong> so every chart reads your
-              API/DB. Turn it on only to stress-test the grid/filters with ~1,200 synthetic rows in the browser.
-            </p>
-            <label className="flex items-center justify-between gap-4 rounded-lg border border-slate-800 bg-slate-950/50 px-4 py-3">
-              <span className="text-sm text-slate-200">Use mock lead universe (1,200 rows)</span>
-              <input
-                type="checkbox"
-                checked={mock}
-                onChange={(e) => {
-                  setUseMockLeads(e.target.checked);
-                  setMock(e.target.checked);
-                }}
-                className="h-4 w-4 accent-sky-500"
-              />
-            </label>
-          </>
-        )}
+        <p className="text-xs text-slate-400 leading-relaxed">
+          <strong className="text-slate-300">Off (default):</strong> Lead Management, Pipeline, and Analytics use your
+          real API — names and emails are whatever you captured (webhook, form, console).{" "}
+          <strong className="text-slate-300">On:</strong> the browser loads ~1,200 <em>synthetic</em> leads only to
+          stress-test tables and filters; they are not written to your database.
+        </p>
+        <label className="flex items-center justify-between gap-4 rounded-lg border border-slate-800 bg-slate-950/50 px-4 py-3">
+          <span className="text-sm text-slate-200">Use mock lead universe (1,200 rows)</span>
+          <input
+            type="checkbox"
+            checked={mock}
+            onChange={(e) => {
+              setUseMockLeads(e.target.checked);
+              setMock(e.target.checked);
+            }}
+            className="h-4 w-4 accent-sky-500"
+          />
+        </label>
       </section>
     </div>
   );
