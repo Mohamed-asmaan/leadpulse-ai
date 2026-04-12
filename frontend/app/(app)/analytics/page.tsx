@@ -18,7 +18,6 @@ import {
   sourceHotBreakdown,
 } from "@/lib/leadMetrics";
 import { MOCK_LEAD_POOL } from "@/lib/mockLeads";
-import { getUseMockLeads } from "@/lib/preferences";
 import type { FunnelMetrics, Lead } from "@/lib/types";
 
 export default function AnalyticsPage() {

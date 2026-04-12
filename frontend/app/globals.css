@@ -2,21 +2,35 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Semantic tokens — layout/visual patterns inspired by Open Mercato (@open-mercato/ui), MIT License.
+ * LeadPulse keeps its own product semantics: lead velocity, tiers, response SLA.
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --background: #020617;
+  --foreground: #f1f5f9;
+  --card: #0f172a;
+  --card-foreground: #f1f5f9;
+  --popover: #0f172a;
+  --popover-foreground: #f1f5f9;
+  --primary: #0ea5e9;
+  --primary-foreground: #020617;
+  --secondary: #1e293b;
+  --secondary-foreground: #e2e8f0;
+  --muted: #1e293b;
+  --muted-foreground: #94a3b8;
+  --accent: #1e293b;
+  --accent-foreground: #f8fafc;
+  --destructive: #dc2626;
+  --destructive-foreground: #fef2f2;
+  --border: #1e293b;
+  --input: #1e293b;
+  --ring: #38bdf8;
 }
 
 body {
-  color: #e2e8f0;
-  background: #020617;
+  color: var(--foreground);
+  background: var(--background);
   font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji",
     "Segoe UI Emoji";
   -webkit-font-smoothing: antialiased;

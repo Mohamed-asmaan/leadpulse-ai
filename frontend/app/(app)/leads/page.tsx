@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { LeadsFiltersBar } from "@/components/leads/LeadsFiltersBar";
 import { LeadsTable } from "@/components/leads/LeadsTable";
+import { PageHeader } from "@/components/ui/PageHeader";
 import { apiFetch } from "@/lib/api";
 import { buildApiQuery, defaultFilters, filterLeadsClient, type LeadListFilters } from "@/lib/leadsFilters";
 import { MOCK_LEAD_POOL } from "@/lib/mockLeads";
@@ -62,6 +63,11 @@ export default function LeadsManagementPage() {
 
   return (
     <div className="p-4 md:p-6 max-w-[1400px] mx-auto space-y-6">
+      <PageHeader
+        label="Lead desk"
+        title="Lead management"
+        description="High-density grid with filters, SLA columns, and score explainability — CRM-style operations without leaving LeadPulse’s capture→score→outreach spine."
+      />
       <LeadsFiltersBar
         filters={filters}
         onChange={setFilters}

@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.models.lead import Lead
 from app.models.outreach_log import OutreachLog
+from app.services.outreach_dispatch import _to_e164, send_resend_email, send_twilio_sms
 from app.services.tracking.timeline import log_event as log_timeline_event
 
 
@@ -45,22 +46,74 @@ def trigger_hot_outreach(db: Session, lead: Lead) -> OutreachLog | None:
         channel="email",
         subject=subject,
         message=message,
-        status="sent",
+        status="queued",
     )
     db.add(log)
-    lead.first_outreach_at = datetime.now(timezone.utc)
-    lead.last_outreach_channel = "email"
     db.commit()
     db.refresh(log)
+
+    ok, meta = send_resend_email(to_email=lead.email, subject=subject, text_body=message)
+    if meta.get("skipped"):
+        log.status = "simulated"
+        email_summary = "HOT email composed; Resend is not configured — stored in OutreachLog for manual send."
+        email_ok = True
+    elif ok:
+        log.status = "sent"
+        email_summary = "HOT email dispatched through Resend."
+        email_ok = True
+    else:
+        log.status = "failed"
+        email_summary = f"HOT email delivery failed via Resend: {meta.get('error', meta)}"
+        email_ok = False
+
+    db.add(log)
+    db.commit()
+    db.refresh(log)
+
+    if email_ok:
+        lead.first_outreach_at = datetime.now(timezone.utc)
+        lead.last_outreach_channel = "email"
+        db.add(lead)
+        db.commit()
+        db.refresh(lead)
 
     log_timeline_event(
         db,
         lead_id=lead.id,
         channel="email",
-        event_type="email_sent",
-        payload={"outreach_id": str(log.id), "subject": subject, "tier": "hot"},
-        summary="Automated HOT outreach dispatched (email channel — configure SMTP/Resend to deliver externally)",
+        event_type="email_sent" if log.status in {"sent", "simulated"} else "email_failed",
+        payload={"outreach_id": str(log.id), "subject": subject, "tier": "hot", "provider": meta},
+        summary=email_summary,
     )
+
+    if settings.HOT_OUTREACH_SMS_ENABLED and email_ok:
+        dest = _to_e164(lead.phone)
+        if dest:
+            fn = _first_name(lead.name)
+            sms_body = (
+                f"Hi {fn}, we received your request and sent a detailed email. "
+                f"Reply YES if you want a 2-min walkthrough. — LeadPulse AI"
+            )
+            s_ok, s_meta = send_twilio_sms(to_e164=dest, body=sms_body)
+            sms_log = OutreachLog(
+                lead_id=lead.id,
+                channel="sms",
+                subject=None,
+                message=sms_body,
+                status="sent" if s_ok else "failed",
+            )
+            db.add(sms_log)
+            db.commit()
+            db.refresh(sms_log)
+            log_timeline_event(
+                db,
+                lead_id=lead.id,
+                channel="sms",
+                event_type="sms_sent" if s_ok else "sms_failed",
+                payload={"outreach_id": str(sms_log.id), "provider": s_meta},
+                summary="HOT SMS sent via Twilio." if s_ok else f"HOT SMS failed: {s_meta.get('error', s_meta)}",
+            )
+
     return log
 
 

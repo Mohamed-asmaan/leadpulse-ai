@@ -8,6 +8,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
+from app.ml import gbm_scorer
 from app.models.lead import Lead
 from app.models.lead_event import LeadEvent
 
@@ -109,7 +110,17 @@ def score_lead(db: Session, lead: Lead) -> Lead:
     intent, intent_reason = compute_intent_from_metadata(lead)
     engagement, engagement_reason = compute_engagement_from_timeline(db, lead.id)
 
-    total = int(round(0.40 * fit + 0.30 * intent + 0.30 * engagement))
+    rule_total = int(round(0.40 * fit + 0.30 * intent + 0.30 * engagement))
+    rule_total = max(0, min(100, rule_total))
+
+    w = max(0.0, min(1.0, float(settings.ML_BLEND_WEIGHT)))
+    ml_p, ml_rationale = gbm_scorer.ml_probability_and_rationale(
+        lead, intent=intent, engagement=engagement
+    )
+    if ml_p is not None and w > 0.0:
+        total = int(round((1.0 - w) * rule_total + w * (100.0 * ml_p)))
+    else:
+        total = rule_total
     total = max(0, min(100, total))
     tier = "cold"
     if total >= settings.HOT_SCORE_MIN:
@@ -118,10 +129,13 @@ def score_lead(db: Session, lead: Lead) -> Lead:
         tier = "warm"
 
     summary = (
-        f"Score {total}/100 ({tier.upper()}). Weighted blend: 40% fit ({fit}), 30% intent ({intent}), "
-        f"30% engagement ({engagement}). "
-        f"Fit: {fit_reason[:140]}…"
+        f"Score {total}/100 ({tier.upper()}). Rules baseline {rule_total}/100 "
+        f"(40% fit {fit}, 30% intent {intent}, 30% engagement {engagement}). "
     )
+    if ml_rationale and w > 0.0:
+        summary += ml_rationale
+    else:
+        summary += f"Explainability (rules): {fit_reason[:120]}…"
 
     lead.fit_score = fit
     lead.intent_score = intent

@@ -19,3 +19,10 @@ class QRPayloadOut(BaseModel):
     badge_type: str | None = None
     tier: str | None = None
     issued_at: str | None = None
+    total_score: int | None = None
+    industry: str | None = None
+    contact_initial: str | None = Field(
+        default=None,
+        description="Redacted contact hint for verification pages (e.g. J. from Acme).",
+    )
+    verification_message: str | None = None

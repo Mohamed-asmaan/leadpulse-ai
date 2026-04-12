@@ -59,18 +59,26 @@ export function VerificationPanel({ leadId }: { leadId: string }) {
             {data.qr_verify_paths.length === 0 ? (
               <p className="text-xs text-slate-500">No QR badge issued yet (typically created for HOT leads).</p>
             ) : (
-              <ul className="space-y-2">
+              <ul className="space-y-3">
                 {data.qr_verify_paths.map((p) => {
                   const url = `${API_BASE}${p}`;
+                  const m = p.match(/\/verify\/qr\/([^/?]+)/);
+                  const token = m?.[1];
+                  const human = token ? `/verify/qr/${token}` : null;
                   return (
-                    <li key={p}>
+                    <li key={p} className="space-y-1">
+                      {human ? (
+                        <a href={human} className="text-xs text-emerald-300 hover:underline font-medium">
+                          Open public verification page
+                        </a>
+                      ) : null}
                       <a
                         href={url}
                         target="_blank"
                         rel="noreferrer"
-                        className="text-xs text-sky-300 hover:underline break-all"
+                        className="block text-xs text-sky-300/90 hover:underline break-all"
                       >
-                        {url}
+                        API (JSON): {url}
                       </a>
                     </li>
                   );

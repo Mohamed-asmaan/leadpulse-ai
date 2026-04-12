@@ -7,6 +7,7 @@ from uuid import UUID
 
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.ml.scoring_engine import score_lead
 from app.models.lead import Lead
 from app.models.qr_badge import QRBadgeToken
@@ -55,10 +56,11 @@ def process_lead_pipeline(
             "company_size_estimate": lead.company_size_estimate,
             "provider": lead.enrichment_provider,
         },
-        summary="Heuristic enrichment applied (domain + company string signals)",
+        summary=f"Enrichment applied (provider={lead.enrichment_provider or 'unknown'})",
     )
 
-    seed_synthetic_engagement_events(db, lead)
+    if settings.SYNTHETIC_ENGAGEMENT_ENABLED:
+        seed_synthetic_engagement_events(db, lead)
 
     apply_lead_authenticity_heuristics(lead)
     db.add(lead)

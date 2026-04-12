@@ -18,7 +18,10 @@ export default function SettingsPage() {
     <div className="p-4 md:p-6 max-w-3xl mx-auto space-y-8">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight text-slate-50">Settings</h1>
-        <p className="text-sm text-slate-500 mt-1">Workspace preferences and academic transparency controls.</p>
+        <p className="text-sm text-slate-500 mt-1">
+          Workspace preferences. Shell components and navigation patterns borrow from Open Mercato&apos;s backoffice UX
+          (MIT), reinterpreted for LeadPulse lead velocity.
+        </p>
       </div>
 
       <section className="rounded-xl border border-slate-800 bg-slate-900/30 p-5 space-y-4">
@@ -63,17 +66,21 @@ export default function SettingsPage() {
             <code className="text-slate-500">X-Webhook-Token</code>).
           </li>
           <li>
-            <span className="text-slate-300">Enrichment</span> — heuristic profile from email/company (no paid vendor
-            unless you configure one server-side).
+            <span className="text-slate-300">Enrichment</span> — Hunter.io + optional Clearbit + custom HTTP, then
+            heuristic fallback so capture never blocks.
           </li>
           <li>
-            <span className="text-slate-300">Scoring</span> — 40% ICP fit, 30% intent from capture keywords (pricing /
-            demo / urgency), 30% engagement from the unified timeline (simulated opens/clicks plus any real events
-            you append). Every score has human-readable reasons stored on the lead row.
+            <span className="text-slate-300">Scoring</span> — 40% ICP fit, 30% intent (keywords / metadata), 30%
+            engagement from the unified timeline, blended with an on-device GradientBoosting head for non-linear
+            ranking. Reasons + model rationale are stored on the lead row.
           </li>
           <li>
-            <span className="text-slate-300">Outreach</span> — hot-tier triggers logged outreach (email provider is
-            optional; wire Resend/SMTP on Render when you are ready).
+            <span className="text-slate-300">Outreach</span> — HOT email via Resend when keys are set; optional HOT SMS
+            via Twilio. Without keys, messages are stored as simulated for audit.
+          </li>
+          <li>
+            <span className="text-slate-300">Tracking</span> — POST behavioral events to the public tracking endpoint
+            (see Capture page); optional <code className="text-slate-500">X-Tracking-Secret</code>.
           </li>
         </ul>
         <p className="text-xs text-amber-200/80 border border-amber-900/40 rounded-lg px-3 py-2 bg-amber-950/20">

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { Check, Copy, ExternalLink, Radio } from "lucide-react";
 
-import { API_BASE } from "@/lib/config";
+import { REST_LEADS_URL, TRACK_EVENT_URL, WEBHOOK_LEADS_URL } from "@/lib/integrationUrls";
 import { apiFetch } from "@/lib/api";
 import { getRole } from "@/lib/auth";
 import type { Lead } from "@/lib/types";
@@ -34,8 +34,9 @@ export default function CapturePage() {
   const [copied, setCopied] = useState<string | null>(null);
 
   const effectiveSource = source === "custom" ? customSource.trim() : source;
-  const webhookUrl = useMemo(() => `${API_BASE}/api/v1/webhooks/leads`, []);
-  const restUrl = useMemo(() => `${API_BASE}/api/v1/leads`, []);
+  const webhookUrl = useMemo(() => WEBHOOK_LEADS_URL, []);
+  const trackUrl = useMemo(() => TRACK_EVENT_URL, []);
+  const restUrl = useMemo(() => REST_LEADS_URL, []);
 
   const curlWebhook = useMemo(
     () =>
@@ -88,9 +89,11 @@ export default function CapturePage() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight text-slate-50">Capture & integrations</h1>
         <p className="text-sm text-slate-500 mt-2 max-w-2xl leading-relaxed">
-          Add leads from the operations console (runs the real pipeline: dedupe → enrichment →{" "}
-          <span className="text-slate-300">scoring (ICP + intent + logistic model)</span> → outreach log). External
-          systems (ads, forms, Zapier) POST JSON to the webhook URL — no browser session required.
+          Add leads from the operations console (runs the real pipeline: dedupe → enrichment (Hunter/Clearbit when
+          configured) →{" "}
+          <span className="text-slate-300">scoring (ICP + intent + engagement + ML blend)</span> → Resend/Twilio
+          outreach when configured). External systems POST JSON to the webhook URL — no browser session required.
+          Meta Lead Ads and Google lead-form payloads are auto-flattened.
         </p>
         {getRole() === "sales" ? (
           <p className="text-xs text-amber-200/90 border border-amber-900/40 rounded-lg px-3 py-2 bg-amber-950/25 max-w-2xl">
@@ -181,9 +184,10 @@ export default function CapturePage() {
       <section className="rounded-xl border border-slate-800 bg-slate-900/30 p-5 space-y-4">
         <h2 className="text-sm font-semibold text-slate-200">External capture (webhook)</h2>
         <p className="text-xs text-slate-500 leading-relaxed">
-          Point Meta Lead Ads, Typeform, or any HTTP client at this URL. JSON body is normalized to name / email /
-          phone / company / source. If you set <code className="text-slate-400">WEBHOOK_SHARED_SECRET</code> on the API
-          host, send header <code className="text-slate-400">X-Webhook-Token</code> with the same value.
+          Point Meta Lead Ads, Google Ads lead forms, Typeform, or any HTTP client at this URL. JSON is normalized to
+          name / email / phone / company / source (nested vendor payloads are unwrapped). If you set{" "}
+          <code className="text-slate-400">WEBHOOK_SHARED_SECRET</code> on the API host, send header{" "}
+          <code className="text-slate-400">X-Webhook-Token</code> with the same value.
         </p>
         <div className="space-y-2">
           <div className="text-[11px] uppercase tracking-wide text-slate-500">Webhook URL</div>
@@ -227,6 +231,23 @@ export default function CapturePage() {
           <code className="text-slate-500">Authorization: Bearer …</code> (use the dashboard form or Swagger with
           Authorize).
         </div>
+      </section>
+
+      <section className="rounded-xl border border-slate-800 bg-slate-900/30 p-5 space-y-4">
+        <h2 className="text-sm font-semibold text-slate-200">Behavioral tracking (website / product)</h2>
+        <p className="text-xs text-slate-500 leading-relaxed">
+          After you know a lead&apos;s UUID (from capture response or CRM), append timeline events from your site or
+          app. Each event <strong>re-scores</strong> the lead. Set{" "}
+          <code className="text-slate-400">PUBLIC_TRACKING_SECRET</code> on the API and send matching header{" "}
+          <code className="text-slate-400">X-Tracking-Secret</code> (recommended in production).
+        </p>
+        <div className="text-[11px] uppercase tracking-wide text-slate-500">Tracking URL</div>
+        <code className="text-xs text-sky-200 break-all bg-slate-950 border border-slate-800 rounded px-2 py-1.5 block">
+          {trackUrl}
+        </code>
+        <pre className="text-[11px] text-slate-400 bg-slate-950 border border-slate-800 rounded-lg p-3 overflow-x-auto whitespace-pre-wrap">
+          {`curl -X POST "${trackUrl}" \\\n  -H "Content-Type: application/json" \\\n  -H "X-Tracking-Secret: YOUR_SECRET" \\\n  -d "{\\"lead_id\\":\\"<uuid>\\",\\"channel\\":\\"web\\",\\"event_type\\":\\"page_visit\\",\\"payload\\":{\\"path\\":\\"/pricing\\"},\\"summary\\":\\"Visited pricing\\"}"`}
+        </pre>
       </section>
 
       <p className="text-xs text-slate-600">

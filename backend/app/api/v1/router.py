@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from app.api.v1.endpoints import analytics, auth, leads, metrics, public, users, verify, webhooks
+from app.api.v1.endpoints import analytics, auth, leads, metrics, public, tracking, users, verify, webhooks
 
 api_router = APIRouter()
 api_router.include_router(auth.router)
@@ -10,4 +10,5 @@ api_router.include_router(analytics.router)
 api_router.include_router(metrics.router)
 api_router.include_router(verify.router)
 api_router.include_router(public.router)
+api_router.include_router(tracking.router)
 api_router.include_router(users.router)
