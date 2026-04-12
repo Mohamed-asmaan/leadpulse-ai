@@ -1,0 +1,320 @@
+import fs from 'node:fs'
+import path from 'node:path'
+import ts from 'typescript'
+import type { PackageResolver, ModuleEntry } from '../resolver'
+import {
+  calculateChecksum,
+  readChecksumRecord,
+  writeChecksumRecord,
+  ensureDir,
+  toVar,
+  toSnake,
+  rimrafDir,
+  logGenerationResult,
+  type GeneratorResult,
+  createGeneratorResult,
+} from '../utils'
+
+type GroupKey = '@app' | '@open-mercato/core' | string
+type EntityFieldMap = Record<string, string[]>
+
+export interface EntityIdsOptions {
+  resolver: PackageResolver
+  quiet?: boolean
+}
+
+/**
+ * Extract exported class names from a TypeScript source file without dynamic import.
+ * This is used for @app modules since Node.js can't import TypeScript files directly.
+ */
+function parseExportedClassNamesFromFile(filePath: string): string[] {
+  const src = fs.readFileSync(filePath, 'utf8')
+  const sf = ts.createSourceFile(filePath, src, ts.ScriptTarget.ES2020, true, ts.ScriptKind.TS)
+  const classNames: string[] = []
+
+  sf.forEachChild((node) => {
+    // Check for exported class declarations
+    if (ts.isClassDeclaration(node) && node.name) {
+      const hasExport = node.modifiers?.some(
+        (m) => m.kind === ts.SyntaxKind.ExportKeyword
+      )
+      if (hasExport) {
+        classNames.push(node.name.text)
+      }
+    }
+  })
+
+  return classNames
+}
+
+function parseEntityFieldsFromFile(filePath: string, exportedClassNames: string[]): EntityFieldMap {
+  const src = fs.readFileSync(filePath, 'utf8')
+  const sf = ts.createSourceFile(filePath, src, ts.ScriptTarget.ES2020, true, ts.ScriptKind.TS)
+
+  const exported = new Set(exportedClassNames)
+  const result: EntityFieldMap = {}
+
+  function getDecoratorArgNameLiteral(dec: ts.Decorator | undefined): string | undefined {
+    if (!dec) return undefined
+    const expr = dec.expression
+    if (!ts.isCallExpression(expr)) return undefined
+    if (!expr.arguments.length) return undefined
+    const first = expr.arguments[0]
+    if (!ts.isObjectLiteralExpression(first)) return undefined
+    for (const prop of first.properties) {
+      if (ts.isPropertyAssignment(prop) && ts.isIdentifier(prop.name) && prop.name.text === 'name') {
+        if (ts.isStringLiteral(prop.initializer)) return prop.initializer.text
+      }
+    }
+    return undefined
+  }
+
+  function normalizeDbName(propertyName: string, _decoratorName?: string, nameOverride?: string): string {
+    if (nameOverride) return nameOverride
+    return toSnake(propertyName)
+  }
+
+  sf.forEachChild((node) => {
+    if (!ts.isClassDeclaration(node) || !node.name) return
+    const clsName = node.name.text
+    if (!exported.has(clsName)) return
+    const entityKey = toSnake(clsName)
+    const fields: string[] = []
+
+    for (const member of node.members) {
+      if (!ts.isPropertyDeclaration(member) || !member.name) continue
+      const name = ts.isIdentifier(member.name)
+        ? member.name.text
+        : ts.isStringLiteral(member.name)
+          ? member.name.text
+          : undefined
+      if (!name) continue
+      if (member.modifiers?.some((m) => m.kind === ts.SyntaxKind.StaticKeyword)) continue
+      const decorators = ts.canHaveDecorators(member)
+        ? ts.getDecorators(member) ?? []
+        : []
+      let dbName: string | undefined
+      if (decorators && decorators.length) {
+        for (const d of decorators) {
+          const nameOverride = getDecoratorArgNameLiteral(d)
+          dbName = normalizeDbName(name, undefined, nameOverride)
+          if (dbName) break
+        }
+      }
+      if (!dbName) dbName = normalizeDbName(name)
+      fields.push(dbName)
+    }
+    result[entityKey] = Array.from(new Set(fields))
+  })
+
+  return result
+}
+
+function writePerEntityFieldFiles(outRoot: string, fieldsByEntity: EntityFieldMap): void {
+  fs.mkdirSync(outRoot, { recursive: true })
+  const desiredEntities = new Set(Object.keys(fieldsByEntity))
+  for (const [entity, fields] of Object.entries(fieldsByEntity)) {
+    const entDir = path.join(outRoot, entity)
+    fs.mkdirSync(entDir, { recursive: true })
+    const idx = fields.map((f) => `export const ${toVar(f)} = '${f}'`).join('\n') + '\n'
+    fs.writeFileSync(path.join(entDir, 'index.ts'), idx)
+  }
+
+  const existingEntries = fs.existsSync(outRoot) ? fs.readdirSync(outRoot, { withFileTypes: true }) : []
+  for (const entry of existingEntries) {
+    if (!entry.isDirectory()) continue
+    if (desiredEntities.has(entry.name)) continue
+    rimrafDir(path.join(outRoot, entry.name))
+  }
+}
+
+function writeEntityFieldsRegistry(generatedRoot: string, fieldsByEntity: EntityFieldMap): void {
+  const entities = Object.keys(fieldsByEntity).sort((a, b) => a.localeCompare(b))
+
+  // Always write the file, even if empty, to prevent TypeScript import errors
+  const imports = entities.length > 0
+    ? entities.map((e) => `import * as ${toVar(e)} from './entities/${e}/index'`).join('\n')
+    : ''
+  const registryEntries = entities.length > 0
+    ? entities.map((e) => `  ${toVar(e)}`).join(',\n')
+    : ''
+
+  const src = `// AUTO-GENERATED by mercato generate entity-ids
+// Static registry for entity fields - eliminates dynamic imports for Turbopack compatibility
+${imports}
+
+export const entityFieldsRegistry: Record<string, Record<string, string>> = {
+${registryEntries}
+}
+
+export function getEntityFields(slug: string): Record<string, string> | undefined {
+  return entityFieldsRegistry[slug]
+}
+`
+  const outPath = path.join(generatedRoot, 'entity-fields-registry.ts')
+  ensureDir(outPath)
+  fs.writeFileSync(outPath, src)
+}
+
+export async function generateEntityIds(options: EntityIdsOptions): Promise<GeneratorResult> {
+  const { resolver, quiet = false } = options
+  const result = createGeneratorResult()
+
+  const outputDir = resolver.getOutputDir()
+  const outFile = path.join(outputDir, 'entities.ids.generated.ts')
+  const checksumFile = path.join(outputDir, 'entities.ids.generated.checksum')
+
+  const entries = resolver.loadEnabledModules()
+
+  const consolidated: Record<string, Record<string, string>> = {}
+  const grouped: Record<GroupKey, Record<string, Record<string, string>>> = {}
+  const modulesDict: Record<string, string> = {}
+  const groupedModulesDict: Record<GroupKey, Record<string, string>> = {}
+
+  const fieldsByGroup: Record<GroupKey, Record<string, EntityFieldMap>> = {}
+
+  for (const entry of entries) {
+    const modId = entry.id
+    const roots = resolver.getModulePaths(entry)
+    const imps = resolver.getModuleImportBase(entry)
+    const group: GroupKey = (entry.from as GroupKey) || '@open-mercato/core'
+    const isAppModule = entry.from === '@app'
+
+    // Locate entities definition file (prefer app override)
+    const appData = path.join(roots.appBase, 'data')
+    const pkgData = path.join(roots.pkgBase, 'data')
+    const appDb = path.join(roots.appBase, 'db')
+    const pkgDb = path.join(roots.pkgBase, 'db')
+    const bases = [appData, pkgData, appDb, pkgDb]
+    const candidates = ['entities.override.ts', 'entities.ts', 'schema.ts']
+    let importPath: string | null = null
+    let filePath: string | null = null
+
+    for (const base of bases) {
+      for (const f of candidates) {
+        const p = path.join(base, f)
+        if (fs.existsSync(p)) {
+          const fromApp = base.startsWith(roots.appBase)
+          const sub = path.basename(base) // 'data' | 'db'
+          importPath = `${fromApp ? imps.appBase : imps.pkgBase}/${sub}/${f.replace(/\.ts$/, '')}`
+          filePath = p
+          break
+        }
+      }
+      if (importPath) break
+    }
+
+    // No entities file found -> still register module id
+    if (!filePath) {
+      modulesDict[modId] = modId
+      groupedModulesDict[group] = groupedModulesDict[group] || {}
+      groupedModulesDict[group][modId] = modId
+      continue
+    }
+
+    // Get exported class names by parsing TypeScript source directly
+    // Since we always read from src/, we can parse TypeScript files
+    const exportNames = parseExportedClassNamesFromFile(filePath)
+
+    const entityNames = exportNames
+      .map((k) => toSnake(k))
+      .filter((k, idx, arr) => arr.indexOf(k) === idx)
+
+    // Build dictionaries
+    modulesDict[modId] = modId
+    groupedModulesDict[group] = groupedModulesDict[group] || {}
+    groupedModulesDict[group][modId] = modId
+
+    consolidated[modId] = consolidated[modId] || {}
+    grouped[group] = grouped[group] || {}
+    grouped[group][modId] = grouped[group][modId] || {}
+
+    for (const en of entityNames) {
+      consolidated[modId][en] = `${modId}:${en}`
+      grouped[group][modId][en] = `${modId}:${en}`
+    }
+
+    // Parse entity fields from TypeScript source
+    const entityFieldMap = parseEntityFieldsFromFile(filePath, exportNames)
+    fieldsByGroup[group] = fieldsByGroup[group] || {}
+    fieldsByGroup[group][modId] = entityFieldMap
+  }
+
+  // Write consolidated output
+  const consolidatedSrc = `// AUTO-GENERATED by mercato generate entity-ids
+export const M = ${JSON.stringify(modulesDict, null, 2)} as const
+export const E = ${JSON.stringify(consolidated, null, 2)} as const
+export type KnownModuleId = keyof typeof M
+export type KnownEntities = typeof E
+`
+
+  // Check if content has changed
+  const newChecksum = calculateChecksum(consolidatedSrc)
+  let shouldWrite = true
+
+  const existingRecord = readChecksumRecord(checksumFile)
+  if (existingRecord && existingRecord.content === newChecksum) {
+    shouldWrite = false
+  }
+
+  if (shouldWrite) {
+    ensureDir(outFile)
+    fs.writeFileSync(outFile, consolidatedSrc)
+    writeChecksumRecord(checksumFile, { content: newChecksum, structure: '' })
+    result.filesWritten.push(outFile)
+    if (!quiet) {
+      logGenerationResult(path.relative(process.cwd(), outFile), true)
+    }
+  } else {
+    result.filesUnchanged.push(outFile)
+  }
+
+  // Write per-group outputs
+  const groups = Object.keys(grouped) as GroupKey[]
+  for (const g of groups) {
+    const pkgOutputDir = resolver.getPackageOutputDir(g)
+    // Skip @app group since it writes to the same location as the consolidated output
+    if (g === '@app' && pkgOutputDir === outputDir) {
+      continue
+    }
+    const out = path.join(pkgOutputDir, 'entities.ids.generated.ts')
+
+    const src = `// AUTO-GENERATED by mercato generate entity-ids
+export const M = ${JSON.stringify(groupedModulesDict[g] || {}, null, 2)} as const
+export const E = ${JSON.stringify(grouped[g] || {}, null, 2)} as const
+export type KnownModuleId = keyof typeof M
+export type KnownEntities = typeof E
+`
+    ensureDir(out)
+    fs.writeFileSync(out, src)
+    result.filesWritten.push(out)
+
+    const fieldsRoot = path.join(pkgOutputDir, 'entities')
+    const fieldsByModule = fieldsByGroup[g] || {}
+    const combined: EntityFieldMap = {}
+    for (const mId of Object.keys(fieldsByModule)) {
+      const mMap = fieldsByModule[mId]
+      for (const [entity, fields] of Object.entries(mMap)) {
+        combined[entity] = Array.from(new Set([...(combined[entity] || []), ...fields]))
+      }
+    }
+    writePerEntityFieldFiles(fieldsRoot, combined)
+
+    // Generate static entity fields registry for Turbopack compatibility
+    writeEntityFieldsRegistry(pkgOutputDir, combined)
+  }
+
+  // Write combined entity fields to root generated/ folder
+  const combinedAll: EntityFieldMap = {}
+  for (const groupFields of Object.values(fieldsByGroup)) {
+    for (const mMap of Object.values(groupFields)) {
+      for (const [entity, fields] of Object.entries(mMap)) {
+        combinedAll[entity] = Array.from(new Set([...(combinedAll[entity] || []), ...fields]))
+      }
+    }
+  }
+  writePerEntityFieldFiles(path.join(outputDir, 'entities'), combinedAll)
+  writeEntityFieldsRegistry(outputDir, combinedAll)
+
+  return result
+}

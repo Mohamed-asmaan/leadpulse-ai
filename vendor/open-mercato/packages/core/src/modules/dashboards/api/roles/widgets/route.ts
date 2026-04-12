@@ -1,0 +1,182 @@
+import { NextResponse } from 'next/server'
+import { z } from 'zod'
+import { getAuthFromRequest } from '@open-mercato/shared/lib/auth/server'
+import { createRequestContainer } from '@open-mercato/shared/lib/di/container'
+import { DashboardRoleWidgets } from '@open-mercato/core/modules/dashboards/data/entities'
+import { roleWidgetSettingsSchema } from '@open-mercato/core/modules/dashboards/data/validators'
+import { loadAllWidgets } from '@open-mercato/core/modules/dashboards/lib/widgets'
+import { hasFeature } from '@open-mercato/shared/security/features'
+import type { OpenApiMethodDoc, OpenApiRouteDoc } from '@open-mercato/shared/lib/openapi'
+import {
+  dashboardsTag,
+  dashboardsErrorSchema,
+  dashboardRoleWidgetsResponseSchema,
+  dashboardRoleWidgetsUpdateResponseSchema,
+} from '../../openapi'
+
+const FEATURE = 'dashboards.admin.assign-widgets'
+
+function pickBestRecord(records: DashboardRoleWidgets[], tenantId: string | null, organizationId: string | null): DashboardRoleWidgets | null {
+  let best: DashboardRoleWidgets | null = null
+  let bestScore = -1
+  for (const record of records) {
+    if (record.deletedAt) continue
+    if (record.tenantId && tenantId && record.tenantId !== tenantId) continue
+    if (record.tenantId && !tenantId) continue
+    if (record.organizationId && organizationId && record.organizationId !== organizationId) continue
+    if (record.organizationId && !organizationId) continue
+    const score = (record.tenantId ? 1 : 0) + (record.organizationId ? 2 : 0)
+    if (score > bestScore) {
+      best = record
+      bestScore = score
+    }
+  }
+  return best
+}
+
+export const metadata = {
+  GET: { requireAuth: true, requireFeatures: [FEATURE] },
+  PUT: { requireAuth: true, requireFeatures: [FEATURE] },
+}
+
+export async function GET(req: Request) {
+  const auth = await getAuthFromRequest(req)
+  if (!auth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const url = new URL(req.url)
+  const roleId = url.searchParams.get('roleId')
+  if (!roleId) return NextResponse.json({ error: 'roleId is required' }, { status: 400 })
+  const tenantId = url.searchParams.get('tenantId') || auth.tenantId || null
+  const organizationId = url.searchParams.get('organizationId') || null
+
+  const container = await createRequestContainer()
+  const em = container.resolve('em') as any
+  const rbac = container.resolve('rbacService') as any
+  const acl = await rbac.loadAcl(auth.sub, { tenantId: auth.tenantId ?? null, organizationId: auth.orgId ?? null })
+  if (!acl.isSuperAdmin && !hasFeature(acl.features, FEATURE)) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
+  const records = await em.find(DashboardRoleWidgets, { roleId, deletedAt: null })
+  const best = pickBestRecord(records, tenantId, organizationId)
+
+  const response = {
+    widgetIds: best ? best.widgetIdsJson : [],
+    hasCustom: !!best,
+    scope: {
+      tenantId,
+      organizationId,
+    },
+  }
+
+  return NextResponse.json(response)
+}
+
+export async function PUT(req: Request) {
+  const auth = await getAuthFromRequest(req)
+  if (!auth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  let payload: unknown
+  try {
+    payload = await req.json()
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+  }
+  const parsed = roleWidgetSettingsSchema.safeParse(payload)
+  if (!parsed.success) {
+    return NextResponse.json({ error: 'Invalid payload', issues: parsed.error.issues }, { status: 400 })
+  }
+
+  const { resolve } = await createRequestContainer()
+  const em = resolve('em') as any
+  const rbac = resolve('rbacService') as any
+  const acl = await rbac.loadAcl(auth.sub, { tenantId: auth.tenantId ?? null, organizationId: auth.orgId ?? null })
+  if (!acl.isSuperAdmin && !hasFeature(acl.features, FEATURE)) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
+  const widgets = await loadAllWidgets()
+  const validWidgetIds = new Set(widgets.map((w) => w.metadata.id))
+  const widgetIds = parsed.data.widgetIds.filter((id) => validWidgetIds.has(id))
+
+  const tenantId = parsed.data.tenantId ?? auth.tenantId ?? null
+  const organizationId = parsed.data.organizationId ?? null
+
+  let record = await em.findOne(DashboardRoleWidgets, {
+    roleId: parsed.data.roleId,
+    tenantId,
+    organizationId,
+    deletedAt: null,
+  })
+
+  if (!widgetIds.length) {
+    if (record) {
+      await em.removeAndFlush(record)
+    }
+    return NextResponse.json({ ok: true, widgetIds: [] })
+  }
+
+  if (!record) {
+    record = em.create(DashboardRoleWidgets, {
+      roleId: parsed.data.roleId,
+      tenantId,
+      organizationId,
+      widgetIdsJson: widgetIds,
+    })
+    em.persist(record)
+  } else {
+    record.widgetIdsJson = widgetIds
+  }
+  await em.flush()
+
+  return NextResponse.json({ ok: true, widgetIds })
+}
+
+const roleWidgetsQuerySchema = z.object({
+  roleId: z.string().uuid(),
+  tenantId: z.string().uuid().optional(),
+  organizationId: z.string().uuid().optional(),
+})
+
+const roleWidgetsGetDoc: OpenApiMethodDoc = {
+  summary: 'Fetch widget assignments for a role',
+  description: 'Returns the widgets explicitly assigned to the given role together with the evaluation scope.',
+  tags: [dashboardsTag],
+  query: roleWidgetsQuerySchema,
+  responses: [
+    { status: 200, description: 'Current widget configuration for the role.', schema: dashboardRoleWidgetsResponseSchema },
+  ],
+  errors: [
+    { status: 400, description: 'Missing role identifier', schema: dashboardsErrorSchema },
+    { status: 401, description: 'Authentication required', schema: dashboardsErrorSchema },
+    { status: 403, description: 'Insufficient permissions to manage role widgets', schema: dashboardsErrorSchema },
+  ],
+}
+
+const roleWidgetsPutDoc: OpenApiMethodDoc = {
+  summary: 'Update widgets assigned to a role',
+  description: 'Persists the widget list for a role within the provided tenant and organization scope.',
+  tags: [dashboardsTag],
+  requestBody: {
+    contentType: 'application/json',
+    schema: roleWidgetSettingsSchema,
+    description: 'Role identifier, optional scope, and the widget ids that should remain assigned.',
+  },
+  responses: [
+    { status: 200, description: 'Widgets updated successfully.', schema: dashboardRoleWidgetsUpdateResponseSchema },
+  ],
+  errors: [
+    { status: 400, description: 'Invalid payload or unknown widgets', schema: dashboardsErrorSchema },
+    { status: 401, description: 'Authentication required', schema: dashboardsErrorSchema },
+    { status: 403, description: 'Insufficient permissions to manage role widgets', schema: dashboardsErrorSchema },
+  ],
+}
+
+export const openApi: OpenApiRouteDoc = {
+  tag: dashboardsTag,
+  summary: 'Manage dashboard widgets assigned to a role',
+  methods: {
+    GET: roleWidgetsGetDoc,
+    PUT: roleWidgetsPutDoc,
+  },
+}
