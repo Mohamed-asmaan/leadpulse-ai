@@ -4,7 +4,7 @@ import hashlib
 from datetime import datetime
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -26,7 +26,7 @@ from app.schemas.lead import (
     OutreachOut,
 )
 from app.services import lead_capture as lead_capture_service
-from app.services.pipeline import process_lead_pipeline
+from app.services.async_pipeline import run_lead_pipeline_background
 from app.services.tracking.timeline import list_timeline, log_event
 
 router = APIRouter()
@@ -55,6 +55,11 @@ def list_leads(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
     tier: str | None = Query(default=None),
+    tier_filter: str | None = Query(
+        default=None,
+        alias="filter",
+        description="Dashboard shortcut: same as tier when tier is omitted (hot | warm | cold)",
+    ),
     source: str | None = Query(default=None),
     min_score: int | None = Query(default=None, ge=0, le=100),
     max_score: int | None = Query(default=None, ge=0, le=100),
@@ -62,11 +67,20 @@ def list_leads(
     created_to: datetime | None = Query(default=None),
     limit: int = Query(default=50, ge=1, le=500),
 ) -> list[LeadListItem]:
+    eff_tier = tier
+    if eff_tier is None and tier_filter:
+        fl = tier_filter.strip().lower()
+        if fl not in ("hot", "warm", "cold"):
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="filter must be one of: hot, warm, cold",
+            )
+        eff_tier = fl
     q = db.query(Lead)
     if user.role != "admin":
         q = q.filter(Lead.assigned_to_id == user.id)
-    if tier:
-        q = q.filter(Lead.tier == tier)
+    if eff_tier:
+        q = q.filter(Lead.tier == eff_tier)
     if source:
         q = q.filter(Lead.source.ilike(f"%{source}%"))
     if min_score is not None:
@@ -85,10 +99,15 @@ def list_leads(
     "",
     response_model=LeadDetailOut,
     status_code=status.HTTP_201_CREATED,
-    summary="Capture a new lead (REST entry point)",
+    summary="Capture a new lead (REST entry point; authenticated operators)",
     responses={409: {"description": "Duplicate lead", "model": LeadDuplicateOut}},
 )
-def capture_lead(payload: LeadCaptureIn, db: Session = Depends(get_db)) -> LeadDetailOut:
+def capture_lead(
+    payload: LeadCaptureIn,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_user),
+) -> LeadDetailOut:
     dup = lead_capture_service.find_duplicate_lead(db, payload)
     if dup is not None:
         _raise_duplicate(dup)
@@ -104,11 +123,11 @@ def capture_lead(payload: LeadCaptureIn, db: Session = Depends(get_db)) -> LeadD
             ) from None
         _raise_duplicate(dup)
 
-    lead = process_lead_pipeline(
-        db,
-        lead.id,
-        ingest_channel="api",
-        ingest_event_type="rest_capture",
+    background_tasks.add_task(
+        run_lead_pipeline_background,
+        str(lead.id),
+        "api",
+        "rest_capture",
     )
     return LeadDetailOut.model_validate(lead)
 

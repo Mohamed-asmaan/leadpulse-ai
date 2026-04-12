@@ -100,7 +100,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
             <div className="text-sm text-slate-400 hidden sm:block">
-              Unified pipeline · Real-time capture · Explainable scoring
+              In-app capture · Webhooks · Enrichment + scored tiers (Hot/Warm/Cold)
             </div>
           </div>
           <div className="flex items-center gap-3 text-sm">

@@ -2,7 +2,7 @@
 
 import json
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
+from fastapi import APIRouter, BackgroundTasks, Depends, Header, HTTPException, Request, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -11,7 +11,7 @@ from app.core.config import settings
 from app.schemas.lead import LeadDetailOut, LeadDuplicateOut
 from app.services import lead_capture as lead_capture_service
 from app.services.capture_normalize import normalize_incoming_lead_dict
-from app.services.pipeline import process_lead_pipeline
+from app.services.async_pipeline import run_lead_pipeline_background
 
 router = APIRouter(prefix="/webhooks", tags=["Webhooks"])
 
@@ -24,6 +24,7 @@ router = APIRouter(prefix="/webhooks", tags=["Webhooks"])
 )
 async def webhook_capture_lead(
     request: Request,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     x_ads_source: str | None = Header(default=None, alias="X-Ads-Source"),
     x_webhook_token: str | None = Header(default=None, alias="X-Webhook-Token"),
@@ -76,10 +77,10 @@ async def webhook_capture_lead(
             ).model_dump(mode="json"),
         ) from None
 
-    lead = process_lead_pipeline(
-        db,
-        lead.id,
-        ingest_channel="webhook",
-        ingest_event_type="webhook_received",
+    background_tasks.add_task(
+        run_lead_pipeline_background,
+        str(lead.id),
+        "webhook",
+        "webhook_received",
     )
     return LeadDetailOut.model_validate(lead)

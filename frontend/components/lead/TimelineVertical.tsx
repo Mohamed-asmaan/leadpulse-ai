@@ -4,10 +4,15 @@ import type { LeadEvent } from "@/lib/types";
 
 const label: Record<string, string> = {
   lead_created: "Lead captured",
+  enriched: "Profile enriched",
+  scored: "AI score computed",
   form_submit: "Form submitted",
   rest_capture: "REST capture",
   webhook_received: "Webhook received",
   outreach_sent: "Automated outreach sent",
+  email_sent: "Automated email dispatched",
+  nurture_marked: "Nurture track scheduled",
+  low_priority_bucket: "Cold / low-priority bucket",
   email_open: "Email opened",
   email_click: "Email link clicked",
   page_visit: "Website visited",

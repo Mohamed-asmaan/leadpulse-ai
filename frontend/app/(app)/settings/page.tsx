@@ -1,7 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Shield, SlidersHorizontal } from "lucide-react";
+import { Shield, SlidersHorizontal, Sparkles } from "lucide-react";
 
 import { getUseMockLeads, setUseMockLeads } from "@/lib/preferences";
 import { getRole } from "@/lib/auth";
@@ -49,12 +50,46 @@ export default function SettingsPage() {
 
       <section className="rounded-xl border border-slate-800 bg-slate-900/30 p-5 space-y-4">
         <div className="flex items-center gap-2 text-sm font-semibold text-slate-200">
+          <Sparkles className="h-4 w-4 text-violet-400" />
+          Data pipeline and AI scoring
+        </div>
+        <ul className="text-xs text-slate-400 space-y-2 list-disc pl-4 leading-relaxed">
+          <li>
+            <span className="text-slate-300">Capture</span> — operators use{" "}
+            <Link href="/capture" className="text-sky-400 hover:underline">
+              Capture
+            </Link>{" "}
+            (REST + JWT). Ads/forms use the public webhook URL shown there (optional{" "}
+            <code className="text-slate-500">X-Webhook-Token</code>).
+          </li>
+          <li>
+            <span className="text-slate-300">Enrichment</span> — heuristic profile from email/company (no paid vendor
+            unless you configure one server-side).
+          </li>
+          <li>
+            <span className="text-slate-300">Scoring</span> — 40% ICP fit, 30% intent from capture keywords (pricing /
+            demo / urgency), 30% engagement from the unified timeline (simulated opens/clicks plus any real events
+            you append). Every score has human-readable reasons stored on the lead row.
+          </li>
+          <li>
+            <span className="text-slate-300">Outreach</span> — hot-tier triggers logged outreach (email provider is
+            optional; wire Resend/SMTP on Render when you are ready).
+          </li>
+        </ul>
+        <p className="text-xs text-amber-200/80 border border-amber-900/40 rounded-lg px-3 py-2 bg-amber-950/20">
+          Sales reps only see leads <strong>assigned</strong> to them. After capture, an <strong>admin</strong> should
+          assign new rows in Lead detail so sales can work them.
+        </p>
+      </section>
+
+      <section className="rounded-xl border border-slate-800 bg-slate-900/30 p-5 space-y-4">
+        <div className="flex items-center gap-2 text-sm font-semibold text-slate-200">
           <SlidersHorizontal className="h-4 w-4 text-amber-300" />
           Performance lab (mock dataset)
         </div>
         <p className="text-xs text-slate-400 leading-relaxed">
-          Enable a deterministic in-browser dataset of ~1,200 synthetic leads to stress-test virtualization, filters,
-          and exports without loading production systems. Toggle off to return to live API data.
+          For a <strong>production-like</strong> demo, keep this <strong>off</strong> so every chart reads Postgres.
+          Turn it on only to stress-test the grid/filters with ~1,200 synthetic rows in the browser.
         </p>
         <label className="flex items-center justify-between gap-4 rounded-lg border border-slate-800 bg-slate-950/50 px-4 py-3">
           <span className="text-sm text-slate-200">Use mock lead universe (1,200 rows)</span>

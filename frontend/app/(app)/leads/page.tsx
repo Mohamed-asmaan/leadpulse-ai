@@ -47,6 +47,8 @@ export default function LeadsManagementPage() {
       return;
     }
     refreshApi();
+    const t = window.setInterval(() => refreshApi(), 5000);
+    return () => window.clearInterval(t);
   }, [mockMode, refreshApi]);
 
   const displayLeads = useMemo(() => {

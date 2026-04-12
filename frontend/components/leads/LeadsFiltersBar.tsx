@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import type { LeadListFilters } from "@/lib/leadsFilters";
 
 type Props = {
@@ -14,18 +16,26 @@ export function LeadsFiltersBar({ filters, onChange, onExportCsv, datasetLabel }
 
   return (
     <div className="rounded-xl border border-slate-800 bg-slate-900/40 p-4 space-y-4">
-      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h2 className="text-lg font-semibold tracking-tight">Lead pipeline</h2>
           <p className="text-xs text-slate-500 mt-0.5">{datasetLabel}</p>
         </div>
-        <button
-          type="button"
-          onClick={onExportCsv}
-          className="rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-900"
-        >
-          Export visible CSV
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href="/capture"
+            className="rounded-md bg-sky-600 hover:bg-sky-500 px-3 py-2 text-xs font-semibold text-white text-center"
+          >
+            New lead
+          </Link>
+          <button
+            type="button"
+            onClick={onExportCsv}
+            className="rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-900"
+          >
+            Export visible CSV
+          </button>
+        </div>
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         <Field label="Status">

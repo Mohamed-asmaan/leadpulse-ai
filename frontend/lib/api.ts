@@ -1,5 +1,6 @@
 import { API_BASE } from "./config";
 import { getToken } from "./auth";
+import { parseApiErrorResponse } from "./parseApiError";
 
 export async function apiFetch<T>(
   path: string,
@@ -16,8 +17,7 @@ export async function apiFetch<T>(
   }
   const res = await fetch(`${API_BASE}${path}`, { ...init, headers });
   if (!res.ok) {
-    const text = await res.text();
-    throw new Error(text || res.statusText);
+    throw new Error(await parseApiErrorResponse(res));
   }
   if (res.status === 204) return undefined as T;
   return (await res.json()) as T;

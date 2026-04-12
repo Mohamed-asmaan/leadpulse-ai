@@ -15,7 +15,7 @@ export default function OverviewPage() {
 
   useEffect(() => {
     let cancelled = false;
-    (async () => {
+    async function load() {
       try {
         const slice = await apiFetch<Lead[]>(`/api/v1/leads?limit=8`);
         if (!cancelled) setLeads(slice);
@@ -27,9 +27,12 @@ export default function OverviewPage() {
       } catch (e) {
         if (!cancelled) setErr(e instanceof Error ? e.message : "Failed to load overview");
       }
-    })();
+    }
+    load();
+    const t = window.setInterval(load, 5000);
     return () => {
       cancelled = true;
+      window.clearInterval(t);
     };
   }, []);
 
@@ -96,7 +99,17 @@ export default function OverviewPage() {
               </div>
             </li>
           ))}
-          {leads.length === 0 ? <li className="px-4 py-6 text-sm text-slate-500">No recent leads in your scope.</li> : null}
+          {leads.length === 0 ? (
+            <li className="px-4 py-8 space-y-3">
+              <p className="text-sm text-slate-400">No leads in your scope yet. Capture from the console or wire a webhook.</p>
+              <Link
+                href="/capture"
+                className="inline-flex rounded-md bg-sky-600 hover:bg-sky-500 px-4 py-2 text-sm font-semibold text-white"
+              >
+                Go to Capture
+              </Link>
+            </li>
+          ) : null}
         </ul>
       </div>
     </div>

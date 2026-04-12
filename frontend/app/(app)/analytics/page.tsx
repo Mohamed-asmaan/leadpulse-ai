@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { FileDown, FileText } from "lucide-react";
 
@@ -8,6 +9,7 @@ import { LinearGauge } from "@/components/analytics/Gauge";
 import { SourceHotChart } from "@/components/analytics/SourceHotChart";
 import { apiFetch } from "@/lib/api";
 import { getRole } from "@/lib/auth";
+import { getUseMockLeads } from "@/lib/preferences";
 import { exportAnalyticsPdf } from "@/lib/exportReports";
 import { exportLeadsCsv } from "@/lib/exportReports";
 import {
@@ -91,8 +93,9 @@ export default function AnalyticsPage() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-slate-50">Analytical reporting</h1>
           <p className="text-sm text-slate-500 mt-1 max-w-2xl">
-            Funnel progression, SLA-oriented response telemetry, and channel quality diagnostics. Dataset respects the
-            mock-data toggle in Settings for reproducible academic runs.
+            Funnel and channel metrics are computed from <span className="text-slate-400">real leads in Postgres</span>{" "}
+            (or the optional mock toggle in Settings). Scores use the same backend as lead detail: ICP fit, timeline
+            intent, and a small logistic model for the predictive dimension.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -122,6 +125,15 @@ export default function AnalyticsPage() {
           </button>
         </div>
       </div>
+
+      {leads.length === 0 && !getUseMockLeads() ? (
+        <div className="rounded-lg border border-amber-900/40 bg-amber-950/20 px-4 py-3 text-sm text-amber-100/90 flex flex-wrap items-center justify-between gap-3">
+          <span>No lead rows yet — analytics will stay at zero until you capture data.</span>
+          <Link href="/capture" className="text-amber-200 font-semibold hover:underline shrink-0">
+            Capture →
+          </Link>
+        </div>
+      ) : null}
 
       <div className="grid gap-6 lg:grid-cols-2">
         <FunnelViz funnel={funnel} />

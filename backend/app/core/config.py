@@ -26,8 +26,8 @@ class Settings(BaseSettings):
     ENRICHMENT_API_URL: str = ""
     ENRICHMENT_API_TIMEOUT_SECONDS: float = 0.75
 
-    HOT_SCORE_MIN: int = 75
-    WARM_SCORE_MIN: int = 45
+    HOT_SCORE_MIN: int = 80
+    WARM_SCORE_MIN: int = 50
 
     # If set, inbound webhooks must send header `X-Webhook-Token` with this value.
     WEBHOOK_SHARED_SECRET: str = ""

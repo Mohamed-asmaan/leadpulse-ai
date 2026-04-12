@@ -59,6 +59,13 @@ export default function LeadDetailPage() {
     };
   }, [id, refresh]);
 
+  useEffect(() => {
+    const t = window.setInterval(() => {
+      void refresh().catch(() => {});
+    }, 5000);
+    return () => window.clearInterval(t);
+  }, [refresh]);
+
   async function postEvent(e: React.FormEvent) {
     e.preventDefault();
     const fd = new FormData(e.target as HTMLFormElement);
@@ -98,6 +105,12 @@ export default function LeadDetailPage() {
 
   return (
     <div className="p-4 md:p-6 max-w-6xl mx-auto space-y-8">
+      {lead.total_score == null && lead.scored_at == null ? (
+        <div className="rounded-lg border border-sky-900/50 bg-sky-950/30 px-4 py-2 text-sm text-sky-200/90">
+          Pipeline running (enrich → score → automation). This page refreshes every 5s until scores appear.
+        </div>
+      ) : null}
+
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <button type="button" onClick={() => router.push("/leads")} className="text-xs text-slate-500 hover:text-slate-300">

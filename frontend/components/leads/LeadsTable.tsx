@@ -28,6 +28,26 @@ export function LeadsTable({ leads }: Props) {
 
   const items = useMemo(() => leads, [leads]);
 
+  if (items.length === 0) {
+    return (
+      <>
+        <div className="rounded-xl border border-dashed border-slate-700 bg-slate-900/20 px-6 py-12 text-center space-y-4">
+          <p className="text-sm text-slate-400 max-w-lg mx-auto leading-relaxed">
+            No leads in this view. Capture a real lead to run the live pipeline (dedupe → enrichment → scoring →
+            outreach log), or enable the mock dataset in Settings only for UI demos.
+          </p>
+          <Link
+            href="/capture"
+            className="inline-flex rounded-md bg-sky-600 hover:bg-sky-500 px-5 py-2.5 text-sm font-semibold text-white"
+          >
+            Open Capture
+          </Link>
+        </div>
+        <InstantOutreachDrawer lead={drawerLead} open={!!drawerLead} onClose={() => setDrawerLead(null)} />
+      </>
+    );
+  }
+
   return (
     <>
       <div

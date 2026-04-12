@@ -1,4 +1,4 @@
-"""Score integrity checks: reconcile weighted totals and tier labels."""
+"""Score integrity: weighted total 40% fit / 30% intent / 30% engagement + tier thresholds."""
 
 from __future__ import annotations
 
@@ -10,8 +10,8 @@ from app.models.lead import Lead
 logger = logging.getLogger(__name__)
 
 
-def weighted_total(fit: int, intent: int, predictive: int) -> int:
-    v = int(round(0.40 * fit + 0.35 * intent + 0.25 * predictive))
+def weighted_total(fit: int, intent: int, engagement: int) -> int:
+    v = int(round(0.40 * fit + 0.30 * intent + 0.30 * engagement))
     return max(0, min(100, v))
 
 
@@ -24,11 +24,7 @@ def tier_for_score(total: int) -> str:
 
 
 def reconcile_lead_scores(lead: Lead) -> list[str]:
-    """
-    Recompute aggregate score from components and align tier.
-
-    Returns human-readable integrity notes (empty if nothing changed).
-    """
+    """Recompute aggregate from components and align tier labels."""
     notes: list[str] = []
     if lead.fit_score is None or lead.intent_score is None or lead.predictive_score is None:
         return ["Incomplete score components; skipping reconciliation."]

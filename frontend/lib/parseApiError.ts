@@ -22,6 +22,10 @@ export async function parseApiErrorResponse(res: Response): Promise<string> {
         })
         .join(" ");
     }
+    if (d && typeof d === "object" && "reason" in d) {
+      const r = (d as { reason?: string; existing_lead_id?: string }).reason;
+      if (typeof r === "string" && r.length > 0) return r;
+    }
   } catch {
     /* not JSON */
   }

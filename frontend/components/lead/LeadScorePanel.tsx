@@ -10,14 +10,20 @@ export function LeadScorePanel({ lead }: { lead: Lead }) {
     <section className="rounded-xl border border-slate-800 bg-slate-900/30 p-5 space-y-4">
       <header>
         <h2 className="text-sm font-semibold tracking-tight text-slate-100">AI scoring</h2>
-        <p className="text-xs text-slate-500 mt-1">Three-dimensional model: Fit, Intent, Predictive — with mandatory explanations.</p>
+        <p className="text-xs text-slate-500 mt-1">
+          Backend blend: 40% ICP fit, 30% intent from capture metadata, 30% engagement from timeline (including
+          simulated opens/clicks for reproducible demos).
+        </p>
       </header>
       <div className="grid grid-cols-3 gap-3">
-        <ScoreTile label="Fit" value={lead.fit_score} />
-        <ScoreTile label="Intent" value={lead.intent_score} />
-        <ScoreTile label="Predictive" value={lead.predictive_score} />
+        <ScoreTile label="Fit (40%)" value={lead.fit_score} hint="Industry + size vs ICP" />
+        <ScoreTile label="Intent (30%)" value={lead.intent_score} hint="Pricing / demo language" />
+        <ScoreTile label="Engagement (30%)" value={lead.predictive_score} hint="Opens, clicks, signals" />
       </div>
-      <div className="rounded-lg border border-slate-800 bg-slate-950/60 p-3 flex items-baseline justify-between gap-3">
+      <div
+        className="rounded-lg border border-slate-800 bg-slate-950/60 p-3 flex items-baseline justify-between gap-3"
+        title={lead.score_summary || undefined}
+      >
         <div className="text-xs uppercase tracking-wide text-slate-500">Composite</div>
         <div className="text-2xl font-semibold tabular-nums text-sky-300">{lead.total_score ?? "—"}</div>
         <div className="text-xs capitalize text-slate-400">{lead.tier || "—"}</div>
@@ -27,7 +33,7 @@ export function LeadScorePanel({ lead }: { lead: Lead }) {
         <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">Explainable reasoning</h3>
         <ReasonBlock title="Fit model" text={lead.fit_reason} />
         <ReasonBlock title="Intent signals" text={lead.intent_reason} />
-        <ReasonBlock title="Predictive layer" text={lead.predictive_reason} />
+        <ReasonBlock title="Engagement layer" text={lead.predictive_reason} />
         {lead.score_summary ? (
           <div className="text-xs text-slate-400 border-t border-slate-800 pt-2 mt-2">{lead.score_summary}</div>
         ) : null}
@@ -36,9 +42,9 @@ export function LeadScorePanel({ lead }: { lead: Lead }) {
   );
 }
 
-function ScoreTile({ label, value }: { label: string; value: number | null | undefined }) {
+function ScoreTile({ label, value, hint }: { label: string; value: number | null | undefined; hint?: string }) {
   return (
-    <div className="rounded-lg border border-slate-800 bg-slate-950/50 p-3 text-center">
+    <div className="rounded-lg border border-slate-800 bg-slate-950/50 p-3 text-center" title={hint}>
       <div className="text-[10px] uppercase tracking-wide text-slate-500">{label}</div>
       <div className="text-xl font-semibold tabular-nums text-slate-100 mt-1">{value ?? "—"}</div>
     </div>

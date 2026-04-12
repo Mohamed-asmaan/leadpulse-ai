@@ -1,4 +1,4 @@
-"""End-to-end lead lifecycle orchestration (capture → enrich → score → outreach)."""
+"""Capture → enrich → simulated engagement → score → automation → audit timeline."""
 
 from __future__ import annotations
 
@@ -12,9 +12,10 @@ from app.models.lead import Lead
 from app.models.qr_badge import QRBadgeToken
 from app.services.enrichment.service import enrich_lead_row
 from app.services.integrity import reconcile_lead_scores
+from app.services.simulation import seed_synthetic_engagement_events
 from app.services.tracking.timeline import log_event
 from app.services.verification import apply_lead_authenticity_heuristics
-from app.services.workflows.outreach import trigger_hot_outreach
+from app.services.workflows.outreach import run_automation_for_lead
 
 
 def process_lead_pipeline(
@@ -39,10 +40,26 @@ def process_lead_pipeline(
             "ingest": ingest_event_type,
             "integrity_sha256": lead.integrity_sha256,
         },
-        summary="Lead captured; real-time pipeline started (enrich → score → respond)",
+        summary="Lead persisted; pipeline queued enrich → engagement simulation → score → automation",
     )
 
     enrich_lead_row(db, lead)
+    db.refresh(lead)
+    log_event(
+        db,
+        lead_id=lead.id,
+        channel="enrichment",
+        event_type="enriched",
+        payload={
+            "industry": lead.industry,
+            "company_size_estimate": lead.company_size_estimate,
+            "provider": lead.enrichment_provider,
+        },
+        summary="Heuristic enrichment applied (domain + company string signals)",
+    )
+
+    seed_synthetic_engagement_events(db, lead)
+
     apply_lead_authenticity_heuristics(lead)
     db.add(lead)
     db.commit()
@@ -54,7 +71,23 @@ def process_lead_pipeline(
     db.commit()
     db.refresh(lead)
 
-    trigger_hot_outreach(db, lead)
+    log_event(
+        db,
+        lead_id=lead.id,
+        channel="scoring",
+        event_type="scored",
+        payload={
+            "total_score": lead.total_score,
+            "tier": lead.tier,
+            "fit": lead.fit_score,
+            "intent": lead.intent_score,
+            "engagement": lead.predictive_score,
+        },
+        summary=f"Composite score {lead.total_score}/100 — tier {lead.tier}",
+    )
+
+    run_automation_for_lead(db, lead)
+    db.refresh(lead)
 
     if (lead.tier or "") == "hot":
         token = secrets.token_urlsafe(18)
