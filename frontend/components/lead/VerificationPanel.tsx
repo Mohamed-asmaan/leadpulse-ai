@@ -30,34 +30,34 @@ export function VerificationPanel({ leadId }: { leadId: string }) {
   }, [leadId]);
 
   return (
-    <section className="rounded-xl border border-slate-800 bg-slate-900/30 p-5 space-y-4">
+    <section className="rounded-xl border border-border bg-muted/40 p-5 space-y-4">
       <div className="flex items-start gap-3">
         <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
-          <ShieldCheck className="h-5 w-5 text-emerald-400" />
+          <ShieldCheck className="h-5 w-5 text-emerald-700" />
         </div>
         <div>
-          <h2 className="text-sm font-semibold tracking-tight text-slate-100">Verification & integrity</h2>
-          <p className="text-xs text-slate-500 mt-1">
+          <h2 className="text-sm font-semibold tracking-tight text-foreground">Verification & integrity</h2>
+          <p className="text-xs text-muted-foreground mt-1">
             Cryptographic profile fingerprint and QR-backed status checks for high-integrity workflows.
           </p>
         </div>
       </div>
-      {err ? <p className="text-xs text-rose-400">{err}</p> : null}
+      {err ? <p className="text-xs text-destructive">{err}</p> : null}
       {data ? (
         <div className="space-y-3 text-sm">
           <div>
-            <div className="text-[11px] uppercase tracking-wide text-slate-500">Profile integrity (SHA-256 prefix)</div>
-            <code className="mt-1 block break-all rounded-md border border-slate-800 bg-slate-950 px-2 py-2 text-xs text-slate-300">
+            <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Profile integrity (SHA-256 prefix)</div>
+            <code className="mt-1 block break-all rounded-md border border-border bg-background px-2 py-2 text-xs text-foreground">
               {data.profile_integrity_hash}
             </code>
           </div>
           <div>
-            <div className="text-[11px] uppercase tracking-wide text-slate-500 mb-2 flex items-center gap-2">
+            <div className="text-[11px] uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-2">
               <QrCode className="h-3.5 w-3.5" />
               QR validation endpoints
             </div>
             {data.qr_verify_paths.length === 0 ? (
-              <p className="text-xs text-slate-500">No QR badge issued yet (typically created for HOT leads).</p>
+              <p className="text-xs text-muted-foreground">No QR badge issued yet (typically created for HOT leads).</p>
             ) : (
               <ul className="space-y-3">
                 {data.qr_verify_paths.map((p) => {
@@ -76,7 +76,7 @@ export function VerificationPanel({ leadId }: { leadId: string }) {
                         href={url}
                         target="_blank"
                         rel="noreferrer"
-                        className="block text-xs text-sky-300/90 hover:underline break-all"
+                        className="block text-xs text-primary/90 hover:underline break-all"
                       >
                         API (JSON): {url}
                       </a>
@@ -88,7 +88,7 @@ export function VerificationPanel({ leadId }: { leadId: string }) {
           </div>
         </div>
       ) : !err ? (
-        <p className="text-xs text-slate-500">Loading verification artifacts…</p>
+        <p className="text-xs text-muted-foreground">Loading verification artifacts…</p>
       ) : null}
     </section>
   );

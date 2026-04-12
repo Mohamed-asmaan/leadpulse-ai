@@ -18,13 +18,13 @@ export function SlaCell({ lead }: { lead: Lead }) {
 
   return (
     <div className="flex flex-col gap-0.5">
-      <span className="tabular-nums text-slate-200">{formatDurationSeconds(elapsed)}</span>
+      <span className="tabular-nums text-foreground">{formatDurationSeconds(elapsed)}</span>
       {breached ? (
-        <span className="text-[10px] font-semibold uppercase tracking-wide text-rose-400">SLA over 5m</span>
+        <span className="text-[10px] font-semibold uppercase tracking-wide text-destructive">SLA over 5m</span>
       ) : lead.first_outreach_at ? (
-        <span className="text-[10px] text-emerald-400/90">Responded</span>
+        <span className="text-[10px] text-emerald-700/90">Responded</span>
       ) : (
-        <span className="text-[10px] text-slate-500">Within SLA</span>
+        <span className="text-[10px] text-muted-foreground">Within SLA</span>
       )}
     </div>
   );

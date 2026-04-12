@@ -70,7 +70,7 @@ export function LeadWorkspace({
             {hot ? (
               <Button
                 variant="default"
-                className="bg-amber-500/20 text-amber-100 border border-amber-500/40 hover:bg-amber-500/30"
+                className="bg-amber-50 text-amber-900 border border-amber-300 hover:bg-amber-100"
                 onClick={onOpenOutreach}
               >
                 <Flame className="h-4 w-4" />

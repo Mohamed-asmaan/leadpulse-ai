@@ -25,7 +25,7 @@ export function CopyField({ label, value, hint }: { label: string; value: string
       <div className="flex items-start gap-2 rounded-lg border border-border bg-muted/30 p-3">
         <code className="min-w-0 flex-1 break-all text-xs text-foreground">{value}</code>
         <Button variant="ghost" size="icon" className="shrink-0" onClick={() => void onCopy()} aria-label="Copy">
-          {copied ? <Check className="h-4 w-4 text-emerald-400" /> : <Copy className="h-4 w-4" />}
+          {copied ? <Check className="h-4 w-4 text-emerald-700" /> : <Copy className="h-4 w-4" />}
         </Button>
       </div>
     </div>

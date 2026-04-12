@@ -75,8 +75,8 @@ export default function LeadsManagementPage() {
         onExportCsv={() => exportLeadsCsv(displayLeads, "leadpulse-leads-export.csv")}
       />
 
-      {error ? <div className="text-sm text-rose-400 border border-rose-900/40 rounded-lg p-3">{error}</div> : null}
-      {loading ? <div className="text-sm text-slate-500">Loading pipeline…</div> : null}
+      {error ? <div className="text-sm text-destructive border border-destructive/25 rounded-lg p-3">{error}</div> : null}
+      {loading ? <div className="text-sm text-muted-foreground">Loading pipeline…</div> : null}
 
       {!loading || mockMode ? <LeadsTable leads={displayLeads} /> : null}
     </div>

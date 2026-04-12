@@ -13,7 +13,7 @@ export function Badge({
     variant === "success"
       ? "bg-emerald-500/15 text-emerald-200 border-emerald-500/30"
       : variant === "warning"
-        ? "bg-amber-500/15 text-amber-200 border-amber-500/30"
+        ? "bg-amber-50 text-amber-900 border-amber-200"
         : variant === "destructive"
           ? "bg-destructive/15 text-destructive border-destructive/40"
           : variant === "outline"

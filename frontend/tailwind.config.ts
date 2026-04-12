@@ -23,7 +23,8 @@ const config: Config = {
         ring: "var(--ring)",
       },
       boxShadow: {
-        sm: "0 1px 2px 0 rgb(0 0 0 / 0.35)",
+        sm: "0 1px 2px 0 rgb(15 23 42 / 0.06)",
+        md: "0 4px 6px -1px rgb(15 23 42 / 0.08), 0 2px 4px -2px rgb(15 23 42 / 0.06)",
       },
     },
   },

@@ -92,8 +92,8 @@ export default function IntegrationsPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <Notice variant="warning">
-              Set <code className="text-amber-200/90">WEBHOOK_SHARED_SECRET</code> on the API host and send{" "}
-              <code className="text-amber-200/90">X-Webhook-Token</code> on every request. Meta Lead Ads and Google
+              Set <code className="text-amber-900">WEBHOOK_SHARED_SECRET</code> on the API host and send{" "}
+              <code className="text-amber-900">X-Webhook-Token</code> on every request. Meta Lead Ads and Google
               lead-form JSON are auto-flattened server-side.
             </Notice>
             <CopyField label="Endpoint" value={WEBHOOK_LEADS_URL} />
@@ -116,8 +116,8 @@ export default function IntegrationsPage() {
           <CardContent className="space-y-4">
             <Notice variant="info">
               Each event appends to the unified timeline and triggers a re-score. Use{" "}
-              <code className="text-sky-200/90">PUBLIC_TRACKING_SECRET</code> + header{" "}
-              <code className="text-sky-200/90">X-Tracking-Secret</code> in production.
+              <code className="text-primary/90">PUBLIC_TRACKING_SECRET</code> + header{" "}
+              <code className="text-primary/90">X-Tracking-Secret</code> in production.
             </Notice>
             <CopyField label="Endpoint" value={TRACK_EVENT_URL} />
             <div>

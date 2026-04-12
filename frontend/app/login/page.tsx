@@ -42,40 +42,43 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-50 flex items-center justify-center px-6">
-      <div className="w-full max-w-md rounded-xl border border-zinc-800 bg-zinc-900/40 p-6 space-y-5">
+    <div className="min-h-screen bg-background text-foreground flex items-center justify-center px-6">
+      <div className="w-full max-w-md rounded-xl border border-border bg-card p-6 space-y-5">
         <div>
           <h1 className="text-xl font-semibold tracking-tight">LeadPulse AI</h1>
-          <p className="text-sm text-zinc-400 mt-1">Sign in to the operations dashboard.</p>
+          <p className="text-sm text-muted-foreground mt-1">Sign in to the operations dashboard.</p>
         </div>
-        {error ? <div className="text-sm text-red-300">{error}</div> : null}
+        {error ? <div className="text-sm text-destructive">{error}</div> : null}
         <form className="space-y-4" onSubmit={onSubmit}>
           <label className="block text-sm">
-            <div className="text-zinc-400 mb-1">Email</div>
+            <div className="text-muted-foreground mb-1">Email</div>
             <input
-              className="w-full rounded-md bg-zinc-950 border border-zinc-800 px-3 py-2"
+              className="w-full rounded-md bg-background border border-border px-3 py-2"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               autoComplete="username"
             />
           </label>
           <label className="block text-sm">
-            <div className="text-zinc-400 mb-1">Password</div>
+            <div className="text-muted-foreground mb-1">Password</div>
             <input
-              className="w-full rounded-md bg-zinc-950 border border-zinc-800 px-3 py-2"
+              className="w-full rounded-md bg-background border border-border px-3 py-2"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               autoComplete="current-password"
             />
           </label>
-          <button type="submit" className="w-full rounded-md bg-sky-600 hover:bg-sky-500 py-2 text-sm font-semibold">
+          <button
+            type="submit"
+            className="w-full rounded-md bg-primary text-primary-foreground hover:bg-primary/90 py-2 text-sm font-semibold shadow-sm"
+          >
             Continue
           </button>
         </form>
-        <p className="text-xs text-zinc-600">
-          Demo users: <span className="text-zinc-400">admin@example.com</span> / <span className="text-zinc-400">Admin123!</span> and{" "}
-          <span className="text-zinc-400">sales@example.com</span> / <span className="text-zinc-400">Sales123!</span>
+        <p className="text-xs text-muted-foreground">
+          Demo users: <span className="text-muted-foreground">admin@example.com</span> / <span className="text-muted-foreground">Admin123!</span> and{" "}
+          <span className="text-muted-foreground">sales@example.com</span> / <span className="text-muted-foreground">Sales123!</span>
         </p>
       </div>
     </div>

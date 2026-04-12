@@ -75,7 +75,7 @@ export default function PipelinePage() {
       />
 
       {mockMode ? (
-        <p className="text-xs text-amber-200/90 border border-amber-900/40 rounded-lg px-3 py-2 bg-amber-950/20">
+        <p className="text-xs text-amber-900 border border-amber-200 rounded-lg px-3 py-2 bg-amber-50">
           Mock dataset enabled in Settings — columns show synthetic distribution.
         </p>
       ) : null}
@@ -86,19 +86,19 @@ export default function PipelinePage() {
       <div className="grid gap-4 lg:grid-cols-3">
         <PipelineColumn
           title="Hot"
-          icon={<Flame className="h-4 w-4 text-rose-400" />}
+          icon={<Flame className="h-4 w-4 text-destructive" />}
           leads={columns.hot}
-          accent="border-rose-900/40 bg-rose-950/10"
+          accent="border-rose-200 bg-rose-50/80"
         />
         <PipelineColumn
           title="Warm"
           icon={<ThermometerSun className="h-4 w-4 text-amber-400" />}
           leads={columns.warm}
-          accent="border-amber-900/40 bg-amber-950/10"
+          accent="border-amber-200 bg-amber-50/80"
         />
         <PipelineColumn
           title="Cold"
-          icon={<Snowflake className="h-4 w-4 text-slate-400" />}
+          icon={<Snowflake className="h-4 w-4 text-muted-foreground" />}
           leads={columns.cold}
           accent="border-border bg-muted/10"
         />

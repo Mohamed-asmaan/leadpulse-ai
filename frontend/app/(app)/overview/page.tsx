@@ -50,19 +50,19 @@ export default function OverviewPage() {
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Kpi
-          icon={<Users className="h-5 w-5 text-sky-400" />}
+          icon={<Users className="h-5 w-5 text-primary" />}
           label="Pipeline (sample)"
           value={String(leads.length)}
           hint="Recent rows from your RBAC scope (up to 8)"
         />
         <Kpi
-          icon={<Flame className="h-5 w-5 text-rose-400" />}
+          icon={<Flame className="h-5 w-5 text-destructive" />}
           label="Hot leads (org)"
           value={funnel != null ? String(funnel.hot) : "—"}
           hint={getRole() === "admin" ? "Admin: org-wide" : "Admin-only KPI hidden"}
         />
         <Kpi
-          icon={<Timer className="h-5 w-5 text-amber-300" />}
+          icon={<Timer className="h-5 w-5 text-amber-800" />}
           label="Avg response"
           value={
             funnel?.avg_response_seconds == null
@@ -72,7 +72,7 @@ export default function OverviewPage() {
           hint="Automated first outreach latency"
         />
         <Kpi
-          icon={<Activity className="h-5 w-5 text-emerald-400" />}
+          icon={<Activity className="h-5 w-5 text-emerald-700" />}
           label="Conversion proxy"
           value={funnel?.conversion_proxy_rate == null ? "—" : `${(funnel.conversion_proxy_rate * 100).toFixed(1)}%`}
           hint="Meeting-booked signal density"

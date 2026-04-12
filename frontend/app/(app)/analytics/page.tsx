@@ -72,27 +72,27 @@ export default function AnalyticsPage() {
 
   if (role !== "admin") {
     return (
-      <div className="p-6 max-w-lg mx-auto mt-10 rounded-xl border border-slate-800 bg-slate-900/40 text-sm text-slate-300">
+      <div className="p-6 max-w-lg mx-auto mt-10 rounded-xl border border-border bg-muted/50 text-sm text-foreground">
         {error}
       </div>
     );
   }
 
   if (loading) {
-    return <div className="p-6 text-sm text-slate-500">Loading analytics workspace…</div>;
+    return <div className="p-6 text-sm text-muted-foreground">Loading analytics workspace…</div>;
   }
 
   if (error) {
-    return <div className="p-6 text-sm text-rose-400">{error}</div>;
+    return <div className="p-6 text-sm text-destructive">{error}</div>;
   }
 
   return (
     <div className="p-4 md:p-6 max-w-6xl mx-auto space-y-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-slate-50">Analytical reporting</h1>
-          <p className="text-sm text-slate-500 mt-1 max-w-2xl">
-            Funnel and channel metrics are computed from <span className="text-slate-400">real leads in Postgres</span>{" "}
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">Analytical reporting</h1>
+          <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
+            Funnel and channel metrics are computed from <span className="text-muted-foreground">real leads in Postgres</span>{" "}
             (or the optional mock toggle in Settings). Scores use the same backend as lead detail: ICP fit, timeline
             intent, and a small logistic model for the predictive dimension.
           </p>
@@ -109,7 +109,7 @@ export default function AnalyticsPage() {
                 accuracyNote: acc.note,
               })
             }
-            className="inline-flex items-center gap-2 rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-800"
+            className="inline-flex items-center gap-2 rounded-md border border-border bg-card px-3 py-2 text-xs font-medium text-foreground hover:bg-muted"
           >
             <FileText className="h-3.5 w-3.5" />
             Export PDF
@@ -117,7 +117,7 @@ export default function AnalyticsPage() {
           <button
             type="button"
             onClick={() => exportLeadsCsv(leads, "leadpulse-analytics-dataset.csv")}
-            className="inline-flex items-center gap-2 rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-800"
+            className="inline-flex items-center gap-2 rounded-md border border-border bg-card px-3 py-2 text-xs font-medium text-foreground hover:bg-muted"
           >
             <FileDown className="h-3.5 w-3.5" />
             Export CSV
@@ -126,9 +126,9 @@ export default function AnalyticsPage() {
       </div>
 
       {leads.length === 0 && !getUseMockLeads() ? (
-        <div className="rounded-lg border border-amber-900/40 bg-amber-950/20 px-4 py-3 text-sm text-amber-100/90 flex flex-wrap items-center justify-between gap-3">
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-100/90 flex flex-wrap items-center justify-between gap-3">
           <span>No lead rows yet — analytics will stay at zero until you capture data.</span>
-          <Link href="/capture" className="text-amber-200 font-semibold hover:underline shrink-0">
+          <Link href="/capture" className="text-amber-900 font-semibold hover:underline shrink-0">
             Capture →
           </Link>
         </div>
@@ -138,7 +138,7 @@ export default function AnalyticsPage() {
         <FunnelViz funnel={funnel} />
         <div className="space-y-4">
           {avgMin == null ? (
-            <div className="rounded-xl border border-slate-800 bg-slate-900/30 p-5 text-xs text-slate-500">
+            <div className="rounded-xl border border-border bg-muted/40 p-5 text-xs text-muted-foreground">
               Average response time: no outreach timestamps yet (requires at least one automated dispatch).
             </div>
           ) : (
@@ -159,7 +159,7 @@ export default function AnalyticsPage() {
             goodIfUnder={false}
             threshold={85}
           />
-          <p className="text-[10px] text-slate-600 leading-snug">{acc.note}</p>
+          <p className="text-[10px] text-muted-foreground leading-snug">{acc.note}</p>
         </div>
       </div>
 

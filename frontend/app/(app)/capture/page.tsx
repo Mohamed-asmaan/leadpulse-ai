@@ -87,35 +87,35 @@ export default function CapturePage() {
   return (
     <div className="p-4 md:p-6 max-w-4xl mx-auto space-y-10">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-slate-50">Capture & integrations</h1>
-        <p className="text-sm text-slate-500 mt-2 max-w-2xl leading-relaxed">
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">Capture & integrations</h1>
+        <p className="text-sm text-muted-foreground mt-2 max-w-2xl leading-relaxed">
           Add leads from the operations console (runs the real pipeline: dedupe → enrichment (Hunter/Clearbit when
           configured) →{" "}
-          <span className="text-slate-300">scoring (ICP + intent + engagement + ML blend)</span> → Resend/Twilio
+          <span className="text-foreground">scoring (ICP + intent + engagement + ML blend)</span> → Resend/Twilio
           outreach when configured). External systems POST JSON to the webhook URL — no browser session required.
           Meta Lead Ads and Google lead-form payloads are auto-flattened.
         </p>
         {getRole() === "sales" ? (
-          <p className="text-xs text-amber-200/90 border border-amber-900/40 rounded-lg px-3 py-2 bg-amber-950/25 max-w-2xl">
+          <p className="text-xs text-amber-900 border border-amber-200 rounded-lg px-3 py-2 bg-amber-50 max-w-2xl">
             As <strong>sales</strong>, new leads stay invisible in your list until an <strong>admin</strong> assigns
             them to you.
           </p>
         ) : null}
       </div>
 
-      <section className="rounded-xl border border-slate-800 bg-slate-900/30 p-5 space-y-5">
-        <div className="flex items-center gap-2 text-sm font-semibold text-slate-200">
-          <Radio className="h-4 w-4 text-sky-400" />
+      <section className="rounded-xl border border-border bg-muted/40 p-5 space-y-5">
+        <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+          <Radio className="h-4 w-4 text-primary" />
           New lead (authenticated)
         </div>
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-muted-foreground">
           Creates a row in Postgres and immediately runs the same backend pipeline used for API/webhook capture.
         </p>
-        {msg ? <div className="text-sm text-rose-300 border border-rose-900/40 rounded-lg px-3 py-2">{msg}</div> : null}
+        {msg ? <div className="text-sm text-destructive border border-destructive/25 bg-destructive/5 rounded-lg px-3 py-2">{msg}</div> : null}
         <form onSubmit={onSubmit} className="space-y-4 max-w-lg">
           <Field label="Full name" required>
             <input
-              className="w-full rounded-md bg-slate-950 border border-slate-800 px-3 py-2 text-sm"
+              className="w-full rounded-md bg-background border border-border px-3 py-2 text-sm"
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
@@ -125,7 +125,7 @@ export default function CapturePage() {
           <Field label="Email" required>
             <input
               type="email"
-              className="w-full rounded-md bg-slate-950 border border-slate-800 px-3 py-2 text-sm"
+              className="w-full rounded-md bg-background border border-border px-3 py-2 text-sm"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -133,7 +133,7 @@ export default function CapturePage() {
           </Field>
           <Field label="Phone (optional)">
             <input
-              className="w-full rounded-md bg-slate-950 border border-slate-800 px-3 py-2 text-sm"
+              className="w-full rounded-md bg-background border border-border px-3 py-2 text-sm"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="+1 555 0100"
@@ -141,14 +141,14 @@ export default function CapturePage() {
           </Field>
           <Field label="Company (optional)">
             <input
-              className="w-full rounded-md bg-slate-950 border border-slate-800 px-3 py-2 text-sm"
+              className="w-full rounded-md bg-background border border-border px-3 py-2 text-sm"
               value={company}
               onChange={(e) => setCompany(e.target.value)}
             />
           </Field>
           <Field label="Source channel" required>
             <select
-              className="w-full rounded-md bg-slate-950 border border-slate-800 px-3 py-2 text-sm"
+              className="w-full rounded-md bg-background border border-border px-3 py-2 text-sm"
               value={source}
               onChange={(e) => setSource(e.target.value)}
             >
@@ -163,7 +163,7 @@ export default function CapturePage() {
           {source === "custom" ? (
             <Field label="Custom source id" required>
               <input
-                className="w-full rounded-md bg-slate-950 border border-slate-800 px-3 py-2 text-sm"
+                className="w-full rounded-md bg-background border border-border px-3 py-2 text-sm"
                 value={customSource}
                 onChange={(e) => setCustomSource(e.target.value)}
                 placeholder="e.g. hubspot_form_42"
@@ -174,31 +174,31 @@ export default function CapturePage() {
           <button
             type="submit"
             disabled={busy}
-            className="w-full sm:w-auto rounded-md bg-sky-600 hover:bg-sky-500 disabled:opacity-50 px-5 py-2.5 text-sm font-semibold text-white"
+            className="w-full sm:w-auto rounded-md bg-primary hover:bg-primary/90 disabled:opacity-50 px-5 py-2.5 text-sm font-semibold text-primary-foreground"
           >
             {busy ? "Running pipeline…" : "Capture lead"}
           </button>
         </form>
       </section>
 
-      <section className="rounded-xl border border-slate-800 bg-slate-900/30 p-5 space-y-4">
-        <h2 className="text-sm font-semibold text-slate-200">External capture (webhook)</h2>
-        <p className="text-xs text-slate-500 leading-relaxed">
+      <section className="rounded-xl border border-border bg-muted/40 p-5 space-y-4">
+        <h2 className="text-sm font-semibold text-foreground">External capture (webhook)</h2>
+        <p className="text-xs text-muted-foreground leading-relaxed">
           Point Meta Lead Ads, Google Ads lead forms, Typeform, or any HTTP client at this URL. JSON is normalized to
           name / email / phone / company / source (nested vendor payloads are unwrapped). If you set{" "}
-          <code className="text-slate-400">WEBHOOK_SHARED_SECRET</code> on the API host, send header{" "}
-          <code className="text-slate-400">X-Webhook-Token</code> with the same value.
+          <code className="text-muted-foreground">WEBHOOK_SHARED_SECRET</code> on the API host, send header{" "}
+          <code className="text-muted-foreground">X-Webhook-Token</code> with the same value.
         </p>
         <div className="space-y-2">
-          <div className="text-[11px] uppercase tracking-wide text-slate-500">Webhook URL</div>
+          <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Webhook URL</div>
           <div className="flex flex-wrap items-center gap-2">
-            <code className="text-xs text-sky-200 break-all bg-slate-950 border border-slate-800 rounded px-2 py-1.5 flex-1 min-w-0">
+            <code className="text-xs text-primary break-all bg-background border border-border rounded px-2 py-1.5 flex-1 min-w-0">
               {webhookUrl}
             </code>
             <button
               type="button"
               onClick={() => copyText("wh", webhookUrl)}
-              className="inline-flex items-center gap-1 rounded-md border border-slate-700 bg-slate-950 px-2 py-1.5 text-xs text-slate-200 hover:bg-slate-900"
+              className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1.5 text-xs text-foreground hover:bg-card"
             >
               {copied === "wh" ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
               Copy
@@ -207,52 +207,52 @@ export default function CapturePage() {
               href={webhookUrl}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-1 text-xs text-sky-400 hover:underline"
+              className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
             >
               <ExternalLink className="h-3.5 w-3.5" /> Open (GET may 405 — POST only)
             </a>
           </div>
         </div>
         <div className="space-y-2">
-          <div className="text-[11px] uppercase tracking-wide text-slate-500">Example curl</div>
-          <pre className="text-[11px] text-slate-400 bg-slate-950 border border-slate-800 rounded-lg p-3 overflow-x-auto whitespace-pre-wrap">
+          <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Example curl</div>
+          <pre className="text-[11px] text-muted-foreground bg-background border border-border rounded-lg p-3 overflow-x-auto whitespace-pre-wrap">
             {curlWebhook}
           </pre>
           <button
             type="button"
             onClick={() => copyText("curl", curlWebhook)}
-            className="text-xs text-sky-400 hover:underline"
+            className="text-xs text-primary hover:underline"
           >
             Copy curl
           </button>
         </div>
-        <div className="text-xs text-slate-600">
-          REST capture (same payload as this form): <code className="text-slate-500 break-all">{restUrl}</code> — requires{" "}
-          <code className="text-slate-500">Authorization: Bearer …</code> (use the dashboard form or Swagger with
+        <div className="text-xs text-muted-foreground">
+          REST capture (same payload as this form): <code className="text-muted-foreground break-all">{restUrl}</code> — requires{" "}
+          <code className="text-muted-foreground">Authorization: Bearer …</code> (use the dashboard form or Swagger with
           Authorize).
         </div>
       </section>
 
-      <section className="rounded-xl border border-slate-800 bg-slate-900/30 p-5 space-y-4">
-        <h2 className="text-sm font-semibold text-slate-200">Behavioral tracking (website / product)</h2>
-        <p className="text-xs text-slate-500 leading-relaxed">
+      <section className="rounded-xl border border-border bg-muted/40 p-5 space-y-4">
+        <h2 className="text-sm font-semibold text-foreground">Behavioral tracking (website / product)</h2>
+        <p className="text-xs text-muted-foreground leading-relaxed">
           After you know a lead&apos;s UUID (from capture response or CRM), append timeline events from your site or
           app. Each event <strong>re-scores</strong> the lead. Set{" "}
-          <code className="text-slate-400">PUBLIC_TRACKING_SECRET</code> on the API and send matching header{" "}
-          <code className="text-slate-400">X-Tracking-Secret</code> (recommended in production).
+          <code className="text-muted-foreground">PUBLIC_TRACKING_SECRET</code> on the API and send matching header{" "}
+          <code className="text-muted-foreground">X-Tracking-Secret</code> (recommended in production).
         </p>
-        <div className="text-[11px] uppercase tracking-wide text-slate-500">Tracking URL</div>
-        <code className="text-xs text-sky-200 break-all bg-slate-950 border border-slate-800 rounded px-2 py-1.5 block">
+        <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Tracking URL</div>
+        <code className="text-xs text-primary break-all bg-background border border-border rounded px-2 py-1.5 block">
           {trackUrl}
         </code>
-        <pre className="text-[11px] text-slate-400 bg-slate-950 border border-slate-800 rounded-lg p-3 overflow-x-auto whitespace-pre-wrap">
+        <pre className="text-[11px] text-muted-foreground bg-background border border-border rounded-lg p-3 overflow-x-auto whitespace-pre-wrap">
           {`curl -X POST "${trackUrl}" \\\n  -H "Content-Type: application/json" \\\n  -H "X-Tracking-Secret: YOUR_SECRET" \\\n  -d "{\\"lead_id\\":\\"<uuid>\\",\\"channel\\":\\"web\\",\\"event_type\\":\\"page_visit\\",\\"payload\\":{\\"path\\":\\"/pricing\\"},\\"summary\\":\\"Visited pricing\\"}"`}
         </pre>
       </section>
 
-      <p className="text-xs text-slate-600">
+      <p className="text-xs text-muted-foreground">
         After capture, open{" "}
-        <Link href="/leads" className="text-sky-400 hover:underline">
+        <Link href="/leads" className="text-primary hover:underline">
           Lead Management
         </Link>{" "}
         or the lead detail page to see enrichment, scores, timeline, and outreach logs.
@@ -272,9 +272,9 @@ function Field({
 }) {
   return (
     <label className="block space-y-1.5">
-      <span className="text-xs text-slate-400">
+      <span className="text-xs text-muted-foreground">
         {label}
-        {required ? <span className="text-rose-400/80"> *</span> : null}
+        {required ? <span className="text-destructive/80"> *</span> : null}
       </span>
       {children}
     </label>

@@ -41,39 +41,39 @@ export default function QrVerifyPage({ params }: { params: { token: string } }) 
   }, [token]);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col items-center justify-center p-6">
-      <div className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900/40 p-8 shadow-xl">
+    <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-6">
+      <div className="w-full max-w-md rounded-2xl border border-border bg-muted/50 p-8 shadow-xl">
         <div className="flex items-center gap-3 mb-6">
           {data?.valid ? (
-            <ShieldCheck className="h-10 w-10 text-emerald-400 shrink-0" />
+            <ShieldCheck className="h-10 w-10 text-emerald-700 shrink-0" />
           ) : data ? (
             <ShieldAlert className="h-10 w-10 text-amber-400 shrink-0" />
           ) : (
-            <ShieldCheck className="h-10 w-10 text-slate-600 shrink-0 animate-pulse" />
+            <ShieldCheck className="h-10 w-10 text-muted-foreground shrink-0 animate-pulse" />
           )}
           <div>
             <h1 className="text-lg font-semibold tracking-tight">LeadPulse verification</h1>
-            <p className="text-xs text-slate-500 mt-0.5">Public credential check (read-only)</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Public credential check (read-only)</p>
           </div>
         </div>
 
-        {err ? <p className="text-sm text-rose-400">{err}</p> : null}
+        {err ? <p className="text-sm text-destructive">{err}</p> : null}
 
-        {!data && !err ? <p className="text-sm text-slate-400">Checking token…</p> : null}
+        {!data && !err ? <p className="text-sm text-muted-foreground">Checking token…</p> : null}
 
         {data ? (
           <div className="space-y-4 text-sm">
             <div
               className={`rounded-lg border px-4 py-3 flex gap-2 ${
-                data.valid ? "border-emerald-800/60 bg-emerald-950/20" : "border-amber-900/50 bg-amber-950/15"
+                data.valid ? "border-emerald-200 bg-emerald-50" : "border-amber-200 bg-amber-50"
               }`}
             >
               {data.valid ? (
-                <CheckCircle2 className="h-5 w-5 text-emerald-400 shrink-0 mt-0.5" />
+                <CheckCircle2 className="h-5 w-5 text-emerald-700 shrink-0 mt-0.5" />
               ) : (
-                <ShieldAlert className="h-5 w-5 text-amber-300 shrink-0 mt-0.5" />
+                <ShieldAlert className="h-5 w-5 text-amber-800 shrink-0 mt-0.5" />
               )}
-              <p className="text-slate-200 leading-relaxed">{data.verification_message}</p>
+              <p className="text-foreground leading-relaxed">{data.verification_message}</p>
             </div>
 
             {data.valid ? (
@@ -89,7 +89,7 @@ export default function QrVerifyPage({ params }: { params: { token: string } }) 
           </div>
         ) : null}
 
-        <p className="mt-8 text-[11px] text-slate-600 leading-relaxed">
+        <p className="mt-8 text-[11px] text-muted-foreground leading-relaxed">
           This page confirms that LeadPulse issued a HOT-tier verification badge for a captured lead. It does not
           expose full PII. For disputes, contact your workspace administrator.
         </p>
@@ -100,9 +100,9 @@ export default function QrVerifyPage({ params }: { params: { token: string } }) 
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex justify-between gap-4 border-b border-slate-800/80 pb-2">
-      <dt className="text-slate-500 shrink-0">{label}</dt>
-      <dd className="text-slate-200 text-right break-words">{value}</dd>
+    <div className="flex justify-between gap-4 border-b border-border/80 pb-2">
+      <dt className="text-muted-foreground shrink-0">{label}</dt>
+      <dd className="text-foreground text-right break-words">{value}</dd>
     </div>
   );
 }

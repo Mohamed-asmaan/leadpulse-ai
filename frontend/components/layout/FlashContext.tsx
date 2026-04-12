@@ -40,13 +40,13 @@ export function FlashProvider({ children }: { children: ReactNode }) {
               "pointer-events-auto rounded-lg border px-3 py-2 text-sm shadow-lg flex items-start gap-2 " +
               (f.type === "error"
                 ? "border-destructive/50 bg-destructive/10 text-destructive-foreground"
-                : "border-emerald-800/50 bg-emerald-950/90 text-emerald-100")
+                : "border-emerald-200 bg-emerald-50 text-emerald-900")
             }
           >
             <span className="flex-1">{f.message}</span>
             <button
               type="button"
-              className="p-0.5 rounded hover:bg-white/10"
+              className="p-0.5 rounded hover:bg-foreground/5 text-foreground"
               aria-label="Dismiss"
               onClick={() => setItems((prev) => prev.filter((x) => x.id !== f.id))}
             >
