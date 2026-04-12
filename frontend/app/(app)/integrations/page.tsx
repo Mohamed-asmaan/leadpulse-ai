@@ -1,15 +1,40 @@
 "use client";
 
 import Link from "next/link";
-import { Webhook, Radio, Shield } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Activity, Webhook, Radio, Shield } from "lucide-react";
 
 import { CopyField } from "@/components/integrations/CopyField";
+import { apiFetch } from "@/lib/api";
+import type { IntegrationStatus } from "@/lib/types";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Notice } from "@/components/ui/Notice";
+import { Badge } from "@/components/ui/Badge";
 import { REST_LEADS_URL, TRACK_EVENT_URL, WEBHOOK_LEADS_URL } from "@/lib/integrationUrls";
 
 export default function IntegrationsPage() {
+  const [status, setStatus] = useState<IntegrationStatus | null>(null);
+  const [statusErr, setStatusErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const s = await apiFetch<IntegrationStatus>("/api/v1/integrations/status");
+        if (!cancelled) {
+          setStatus(s);
+          setStatusErr(null);
+        }
+      } catch (e) {
+        if (!cancelled) setStatusErr(e instanceof Error ? e.message : "Could not load status");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const curlWebhook = `curl -X POST "${WEBHOOK_LEADS_URL}" -H "Content-Type: application/json" -d "{\\"name\\":\\"Partner Lead\\",\\"email\\":\\"lead@example.com\\",\\"company\\":\\"Acme\\",\\"source\\":\\"meta_ads_lead\\"}"`;
 
   const curlTrack = `curl -X POST "${TRACK_EVENT_URL}" -H "Content-Type: application/json" -H "X-Tracking-Secret: YOUR_SECRET" -d "{\\"lead_id\\":\\"<uuid>\\",\\"channel\\":\\"web\\",\\"event_type\\":\\"page_visit\\",\\"payload\\":{\\"path\\":\\"/pricing\\"}}"`;
@@ -19,7 +44,7 @@ export default function IntegrationsPage() {
       <PageHeader
         label="Integrations"
         title="External systems"
-        description="Wire capture, tracking, and auth the same way a modular CRM backoffice would — scoped to LeadPulse’s real-time lead pipeline (not full ERP/commerce)."
+        description="Wire capture, tracking, and auth like a modular CRM backoffice — adapted to LeadPulse&apos;s real-time lead pipeline (not ERP/commerce)."
         action={
           <Link
             href="/capture"
@@ -29,6 +54,35 @@ export default function IntegrationsPage() {
           </Link>
         }
       />
+
+      <Card>
+        <CardHeader className="flex flex-row items-center gap-2">
+          <Activity className="h-4 w-4 text-primary shrink-0" />
+          <CardTitle>Live capability flags</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-xs text-muted-foreground">
+            Mirrors Open Mercato–style integration health: which vendors are actually configured on the API host
+            (booleans only — no keys).
+          </p>
+          {statusErr ? <p className="text-xs text-destructive">{statusErr}</p> : null}
+          {status ? (
+            <div className="flex flex-wrap gap-2">
+              <Flag ok={status.hunter_configured} label="Hunter.io" />
+              <Flag ok={status.clearbit_configured} label="Clearbit" />
+              <Flag ok={status.custom_enrichment_url_configured} label="Custom enrich URL" />
+              <Flag ok={status.resend_configured} label="Resend email" />
+              <Flag ok={status.twilio_configured} label="Twilio creds" />
+              <Flag ok={status.hot_sms_enabled} label="HOT SMS enabled" warnUnlessTrue />
+              <Flag ok={status.webhook_shared_secret_configured} label="Webhook token" warnUnlessTrue />
+              <Flag ok={status.public_tracking_secret_configured} label="Tracking secret" warnUnlessTrue />
+              <Flag ok={!status.synthetic_engagement_enabled} label="Live engagement (no sim)" warnUnlessTrue />
+            </div>
+          ) : !statusErr ? (
+            <p className="text-xs text-muted-foreground">Loading…</p>
+          ) : null}
+        </CardContent>
+      </Card>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
@@ -92,5 +146,16 @@ export default function IntegrationsPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+function Flag({ ok, label, warnUnlessTrue }: { ok: boolean; label: string; warnUnlessTrue?: boolean }) {
+  const warn = warnUnlessTrue ? !ok : false;
+  const variant = ok ? "success" : warn ? "warning" : "outline";
+  const text = ok ? "ON" : "OFF";
+  return (
+    <Badge variant={variant}>
+      {label}: {text}
+    </Badge>
   );
 }

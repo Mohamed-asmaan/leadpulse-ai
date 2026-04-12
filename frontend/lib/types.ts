@@ -75,3 +75,16 @@ export type LeadVerification = {
   profile_integrity_hash: string;
   qr_verify_paths: string[];
 };
+
+/** GET /api/v1/integrations/status — adapted from OM integration health (no secrets). */
+export type IntegrationStatus = {
+  hunter_configured: boolean;
+  clearbit_configured: boolean;
+  custom_enrichment_url_configured: boolean;
+  resend_configured: boolean;
+  twilio_configured: boolean;
+  hot_sms_enabled: boolean;
+  webhook_shared_secret_configured: boolean;
+  public_tracking_secret_configured: boolean;
+  synthetic_engagement_enabled: boolean;
+};
