@@ -87,4 +87,15 @@ export type IntegrationStatus = {
   webhook_shared_secret_configured: boolean;
   public_tracking_secret_configured: boolean;
   synthetic_engagement_enabled: boolean;
+  meta_webhook_verify_configured: boolean;
+  meta_app_secret_configured: boolean;
+  website_form_secret_configured: boolean;
+};
+
+/** GET /api/v1/integrations/workflows — built-in automation catalog. */
+export type AutomationWorkflow = {
+  id: string;
+  name: string;
+  trigger: string;
+  actions: string[];
 };

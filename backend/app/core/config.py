@@ -54,6 +54,16 @@ class Settings(BaseSettings):
     # If set, inbound webhooks must send header `X-Webhook-Token` with this value.
     WEBHOOK_SHARED_SECRET: str = ""
 
+    # --- Meta (Facebook / Instagram) Lead Ads — Graph webhook ---
+    # Page subscription verification: Meta sends hub.mode=subscribe & hub.verify_token; must echo hub.challenge.
+    META_WEBHOOK_VERIFY_TOKEN: str = ""
+    # App secret from Meta Developer app — used to verify X-Hub-Signature-256 on POST (recommended in production).
+    META_APP_SECRET: str = ""
+
+    # --- Website lead forms (Zoho-style public embed) ---
+    # If set, POST /public/website-lead requires header X-Website-Form-Secret with this value.
+    WEBSITE_FORM_SHARED_SECRET: str = ""
+
 
 @lru_cache
 def get_settings() -> Settings:

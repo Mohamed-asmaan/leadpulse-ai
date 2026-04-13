@@ -55,6 +55,13 @@ Open [http://localhost:3000](http://localhost:3000).
 - `backend/.env.example` — database URL, JWT secret, optional webhook secret.  
 - `frontend/.env.example` — `NEXT_PUBLIC_API_URL` for the browser.
 
+## CRM-style connectors (Meta, Google, website)
+
+- **Meta Lead Ads:** set `META_WEBHOOK_VERIFY_TOKEN` and `META_APP_SECRET`, then in [Meta for Developers](https://developers.facebook.com/) point the Page webhook callback to `{API}/api/v1/webhooks/meta` (GET verification + POST leads).  
+- **Google Ads lead forms:** POST the lead payload (including `user_column_data`) to `{API}/api/v1/webhooks/leads` with `X-Webhook-Token` when `WEBHOOK_SHARED_SECRET` is set — the API unwraps Google’s shape automatically.  
+- **Your marketing site:** set `WEBSITE_FORM_SHARED_SECRET`, embed the script from `{API}/api/v1/public/embed/lead-form.js`, and use a `<form data-leadpulse-website-lead>` — submissions hit `{API}/api/v1/public/website-lead` and run the same capture → score → automation pipeline.  
+- **Behavioral tracking:** `{API}/api/v1/public/track/event` with `PUBLIC_TRACKING_SECRET` (see Integrations page in the app).
+
 Do not commit real `.env` or `.env.local` files; they are ignored by Git.
 
 ## Deploying

@@ -3,15 +3,20 @@
 import json
 
 from fastapi import APIRouter, BackgroundTasks, Depends, Header, HTTPException, Request, status
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db
 from app.core.config import settings
-from app.schemas.lead import LeadDetailOut, LeadDuplicateOut
-from app.services import lead_capture as lead_capture_service
-from app.services.capture_normalize import normalize_incoming_lead_dict
+from app.schemas.lead import LeadDetailOut
 from app.services.async_pipeline import run_lead_pipeline_background
+from app.services.webhook_ingest import (
+    LeadDuplicateError,
+    duplicate_http_exception,
+    json_parse_error,
+    normalize_error_http,
+    normalize_webhook_json,
+    persist_webhook_lead,
+)
 
 router = APIRouter(prefix="/webhooks", tags=["Webhooks"])
 
@@ -35,47 +40,20 @@ async def webhook_capture_lead(
     try:
         body = await request.json()
     except json.JSONDecodeError as exc:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Body must be JSON") from exc
+        raise json_parse_error(exc) from exc
 
     try:
-        payload, extras = normalize_incoming_lead_dict(body)
+        payload, extras = normalize_webhook_json(body)
     except ValueError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=f"Invalid lead payload: {exc}",
-        ) from exc
+        raise normalize_error_http(exc) from exc
 
     if x_ads_source and x_ads_source.strip():
         payload = payload.model_copy(update={"source": x_ads_source.strip()})
 
-    dup = lead_capture_service.find_duplicate_lead(db, payload)
-    if dup is not None:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=LeadDuplicateOut(
-                reason="A lead with this email already exists.",
-                existing_lead_id=dup.id,
-                matched_on="email",
-            ).model_dump(mode="json"),
-        )
     try:
-        lead = lead_capture_service.create_lead(db, payload, capture_channel="webhook", extras=extras or None)
-    except IntegrityError:
-        db.rollback()
-        dup = lead_capture_service.find_duplicate_lead(db, payload)
-        if dup is None:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="Lead could not be created due to a constraint conflict.",
-            ) from None
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=LeadDuplicateOut(
-                reason="A lead with this email already exists.",
-                existing_lead_id=dup.id,
-                matched_on="email",
-            ).model_dump(mode="json"),
-        ) from None
+        lead = persist_webhook_lead(db, payload, extras=extras, capture_channel="webhook")
+    except LeadDuplicateError as dup:
+        raise duplicate_http_exception(dup.existing_lead_id) from dup
 
     background_tasks.add_task(
         run_lead_pipeline_background,
