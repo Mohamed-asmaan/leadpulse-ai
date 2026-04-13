@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import {
   Activity,
   BookOpen,
@@ -14,8 +13,7 @@ import {
 } from "lucide-react";
 
 import { CopyField } from "@/components/integrations/CopyField";
-import { apiFetch } from "@/lib/api";
-import type { AutomationWorkflow, IntegrationStatus } from "@/lib/types";
+import { useIntegrationBundle } from "@/lib/hooks/useIntegrationBundle";
 import {
   META_WEBHOOK_URL,
   REST_LEADS_URL,
@@ -28,37 +26,10 @@ import { Notice } from "@/components/ui/Notice";
 import { Badge } from "@/components/ui/Badge";
 
 export default function IntegrationsPage() {
-  const [status, setStatus] = useState<IntegrationStatus | null>(null);
-  const [statusErr, setStatusErr] = useState<string | null>(null);
-  const [workflows, setWorkflows] = useState<AutomationWorkflow[] | null>(null);
-  const [wfErr, setWfErr] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const [s, w] = await Promise.all([
-          apiFetch<IntegrationStatus>("/api/v1/integrations/status"),
-          apiFetch<AutomationWorkflow[]>("/api/v1/integrations/workflows"),
-        ]);
-        if (!cancelled) {
-          setStatus(s);
-          setWorkflows(w);
-          setStatusErr(null);
-          setWfErr(null);
-        }
-      } catch (e) {
-        if (!cancelled) {
-          const msg = e instanceof Error ? e.message : "Could not load integrations";
-          setStatusErr(msg);
-          setWfErr(msg);
-        }
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const { data, error, isPending } = useIntegrationBundle();
+  const status = data?.status;
+  const workflows = data?.workflows ?? [];
+  const bundleErr = error?.message ?? null;
 
   const curlWebhook = `curl -X POST "${WEBHOOK_LEADS_URL}" -H "Content-Type: application/json" -H "X-Webhook-Token: YOUR_SECRET" -d "{\\"name\\":\\"Google Lead\\",\\"email\\":\\"lead@example.com\\",\\"company\\":\\"Acme\\",\\"source\\":\\"google_ads_lead\\"}"`;
 
@@ -103,7 +74,7 @@ export default function IntegrationsPage() {
           <p className="text-xs text-muted-foreground">
             Booleans only — no API keys. Configure secrets in <code className="text-foreground/90">backend/.env</code>.
           </p>
-          {statusErr ? <p className="text-xs text-destructive">{statusErr}</p> : null}
+          {bundleErr ? <p className="text-xs text-destructive">{bundleErr}</p> : null}
           {status ? (
             <div className="flex flex-wrap gap-2">
               <Flag ok={status.hunter_configured} label="Hunter.io" />
@@ -119,7 +90,7 @@ export default function IntegrationsPage() {
               <Flag ok={status.public_tracking_secret_configured} label="Tracking secret" warnUnlessTrue />
               <Flag ok={!status.synthetic_engagement_enabled} label="Live engagement (no sim)" warnUnlessTrue />
             </div>
-          ) : !statusErr ? (
+          ) : isPending && !bundleErr ? (
             <p className="text-xs text-muted-foreground">Loading…</p>
           ) : null}
         </CardContent>
@@ -134,8 +105,8 @@ export default function IntegrationsPage() {
           <p className="text-xs text-muted-foreground">
             End-to-end flows run in code today (no drag-and-drop builder yet). Each new lead triggers the pipeline below.
           </p>
-          {wfErr ? <p className="text-xs text-destructive">{wfErr}</p> : null}
-          {workflows?.map((w) => (
+          {bundleErr ? <p className="text-xs text-destructive">{bundleErr}</p> : null}
+          {workflows.map((w) => (
             <div key={w.id} className="rounded-lg border border-border bg-muted/20 p-4 space-y-2">
               <div className="text-sm font-semibold text-foreground">{w.name}</div>
               <p className="text-[11px] text-muted-foreground">
@@ -148,7 +119,9 @@ export default function IntegrationsPage() {
               </ol>
             </div>
           ))}
-          {!workflows && !wfErr ? <p className="text-xs text-muted-foreground">Loading…</p> : null}
+          {isPending && workflows.length === 0 && !bundleErr ? (
+            <p className="text-xs text-muted-foreground">Loading…</p>
+          ) : null}
         </CardContent>
       </Card>
 

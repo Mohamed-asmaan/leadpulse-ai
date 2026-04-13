@@ -55,6 +55,12 @@ Open [http://localhost:3000](http://localhost:3000).
 - `backend/.env.example` — database URL, JWT secret, optional webhook secret.  
 - `frontend/.env.example` — `NEXT_PUBLIC_API_URL` for the browser.
 
+### Performance & security (production)
+
+- **CORS:** set `CORS_ALLOW_ORIGINS` on the API to a comma-separated list of real front-end origins (e.g. `https://app.example.com`). Leaving it empty uses a wildcard with credentials disabled (fine for local dev).  
+- **Dashboard cache:** the authenticated app uses **TanStack Query** (`AppQueryProvider` in `frontend/app/(app)/layout.tsx`) so lead lists, integration status, and lead workspace data are deduped, cached, and refreshed on a sane interval instead of ad-hoc `useEffect` fetches everywhere.  
+- **HTTP cache:** browser `fetch` for the API uses `cache: "no-store"` so stale CDN/browser caching does not override React Query.
+
 ## AI in the product (visible in the app)
 
 - Open **AI Studio** in the sidebar (`/intelligence`) for pipeline-wide suggestions, score stats, and wiring tips.  

@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.99.0",
     "@tanstack/react-virtual": "^3.13.23",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.7",

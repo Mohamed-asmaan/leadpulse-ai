@@ -1,38 +1,33 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Sparkles } from "lucide-react";
 
 import { LeadsFiltersBar } from "@/components/leads/LeadsFiltersBar";
 import { LeadsTable } from "@/components/leads/LeadsTable";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { apiFetch } from "@/lib/api";
 import { buildApiQuery, defaultFilters, filterLeadsClient, type LeadListFilters } from "@/lib/leadsFilters";
 import { MOCK_LEAD_POOL } from "@/lib/mockLeads";
 import { getUseMockLeads } from "@/lib/preferences";
 import { exportLeadsCsv } from "@/lib/exportReports";
-import type { Lead } from "@/lib/types";
+import { useLeadsList } from "@/lib/hooks/useLeadsList";
 
 export default function LeadsManagementPage() {
   const [filters, setFilters] = useState<LeadListFilters>(defaultFilters);
-  const [apiLeads, setApiLeads] = useState<Lead[]>([]);
   const [mockMode, setMockMode] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  const refreshApi = useCallback(async () => {
-    setLoading(true);
-    try {
-      const data = await apiFetch<Lead[]>(`/api/v1/leads${buildApiQuery(filters, 500)}`);
-      setApiLeads(data);
-      setError(null);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load leads");
-    } finally {
-      setLoading(false);
-    }
-  }, [filters]);
+  const queryString = useMemo(() => buildApiQuery(filters, 500), [filters]);
+
+  const {
+    data: apiLeads = [],
+    error,
+    isPending,
+    isFetching,
+  } = useLeadsList(queryString, {
+    enabled: !mockMode,
+    refetchInterval: 5000,
+  });
 
   useEffect(() => {
     setMockMode(getUseMockLeads());
@@ -44,16 +39,6 @@ export default function LeadsManagementPage() {
     return () => window.removeEventListener("lp-prefs-changed", onPrefs);
   }, []);
 
-  useEffect(() => {
-    if (mockMode) {
-      setLoading(false);
-      return;
-    }
-    refreshApi();
-    const t = window.setInterval(() => refreshApi(), 5000);
-    return () => window.clearInterval(t);
-  }, [mockMode, refreshApi]);
-
   const displayLeads = useMemo(() => {
     if (mockMode) return filterLeadsClient(MOCK_LEAD_POOL, filters);
     return apiLeads;
@@ -61,7 +46,9 @@ export default function LeadsManagementPage() {
 
   const datasetLabel = mockMode
     ? "Mock universe · 1,200 synthetic leads · client-side filters + virtualization"
-    : "Live API · RBAC-scoped · server-side filters (limit 500)";
+    : "Live API · RBAC-scoped · server-side filters (limit 500) · TanStack Query cache + 5s poll";
+
+  const loading = !mockMode && isPending;
 
   return (
     <div className="p-4 md:p-6 max-w-[1400px] mx-auto space-y-6">
@@ -86,8 +73,13 @@ export default function LeadsManagementPage() {
         onExportCsv={() => exportLeadsCsv(displayLeads, "leadpulse-leads-export.csv")}
       />
 
-      {error ? <div className="text-sm text-destructive border border-destructive/25 rounded-lg p-3">{error}</div> : null}
+      {error && !mockMode ? (
+        <div className="text-sm text-destructive border border-destructive/25 rounded-lg p-3">{error.message}</div>
+      ) : null}
       {loading ? <div className="text-sm text-muted-foreground">Loading pipeline…</div> : null}
+      {!mockMode && isFetching && !isPending ? (
+        <div className="text-[11px] text-muted-foreground">Refreshing…</div>
+      ) : null}
 
       {!loading || mockMode ? <LeadsTable leads={displayLeads} /> : null}
     </div>

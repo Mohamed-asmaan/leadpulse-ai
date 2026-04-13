@@ -1,3 +1,7 @@
+/**
+ * Session in localStorage keeps the SPA simple for coursework and demos.
+ * For production hardening, prefer httpOnly cookies + CSRF and tighten CSP instead of long-lived tokens in JS storage.
+ */
 const TOKEN_KEY = "lp_token";
 const ROLE_KEY = "lp_role";
 const NAME_KEY = "lp_name";

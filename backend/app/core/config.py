@@ -14,6 +14,10 @@ class Settings(BaseSettings):
     API_V1_PREFIX: str = "/api/v1"
     DATABASE_URL: str = "sqlite:///./leadpulse_dev.db"
 
+    # Comma-separated browser origins for CORS, e.g. "http://localhost:3000,https://app.example.com".
+    # Empty = wildcard "*" with credentials disabled (typical local dev). Set in production.
+    CORS_ALLOW_ORIGINS: str = ""
+
     JWT_SECRET: str = "change-me-in-production-use-long-random-secret"
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24

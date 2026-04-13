@@ -1,39 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { Brain, Cable, Sparkles } from "lucide-react";
 
 import { AiAutomationAssistant } from "@/components/ai/AiAutomationAssistant";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Notice } from "@/components/ui/Notice";
-import { apiFetch } from "@/lib/api";
+import { LEADS_DASHBOARD_QUERY } from "@/lib/constants/dataFetch";
+import { useLeadsList } from "@/lib/hooks/useLeadsList";
 import { getRole } from "@/lib/auth";
-import type { Lead } from "@/lib/types";
 
 export default function IntelligencePage() {
-  const [leads, setLeads] = useState<Lead[]>([]);
-  const [err, setErr] = useState<string | null>(null);
   const isAdmin = getRole() === "admin";
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const rows = await apiFetch<Lead[]>(`/api/v1/leads?limit=100`);
-        if (!cancelled) {
-          setLeads(rows);
-          setErr(null);
-        }
-      } catch (e) {
-        if (!cancelled) setErr(e instanceof Error ? e.message : "Failed to load leads");
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const { data: leads = [], error, isPending } = useLeadsList(LEADS_DASHBOARD_QUERY, { refetchInterval: 5000 });
 
   return (
     <div className="p-4 md:p-6 max-w-5xl mx-auto space-y-8">
@@ -52,7 +32,10 @@ export default function IntelligencePage() {
         }
       />
 
-      {err ? <div className="text-sm text-destructive border border-border rounded-lg p-3">{err}</div> : null}
+      {error ? <div className="text-sm text-destructive border border-border rounded-lg p-3">{error.message}</div> : null}
+      {isPending && leads.length === 0 ? (
+        <div className="text-sm text-muted-foreground border border-border rounded-lg p-4">Loading leads…</div>
+      ) : null}
 
       <Notice variant="info">
         <span className="font-medium text-foreground">Where the AI lives in the product:</span> each lead’s{" "}
@@ -93,9 +76,21 @@ export default function IntelligencePage() {
           </CardHeader>
           <CardContent className="text-xs text-muted-foreground space-y-2">
             <ul className="list-disc pl-4 space-y-1">
-              <li>Log <strong className="text-foreground">email_open</strong> / <strong className="text-foreground">page_visit</strong> events so engagement scores move.</li>
-              <li>Wire <Link href="/integrations" className="text-primary font-medium hover:underline">Meta & Google webhooks</Link> so AI sees real ad leads.</li>
-              <li>Open a HOT lead and use <strong className="text-foreground">Instant outreach</strong> from the workspace header.</li>
+              <li>
+                Log <strong className="text-foreground">email_open</strong> /{" "}
+                <strong className="text-foreground">page_visit</strong> events so engagement scores move.
+              </li>
+              <li>
+                Wire{" "}
+                <Link href="/integrations" className="text-primary font-medium hover:underline">
+                  Meta & Google webhooks
+                </Link>{" "}
+                so AI sees real ad leads.
+              </li>
+              <li>
+                Open a HOT lead and use <strong className="text-foreground">Instant outreach</strong> from the workspace
+                header.
+              </li>
             </ul>
           </CardContent>
         </Card>

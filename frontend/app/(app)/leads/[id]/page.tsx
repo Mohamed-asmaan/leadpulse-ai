@@ -1,70 +1,41 @@
 "use client";
 
-import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useParams } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { LeadWorkspace } from "@/components/lead/LeadWorkspace";
 import { InstantOutreachDrawer } from "@/components/leads/InstantOutreachDrawer";
 import { useFlash } from "@/components/layout/FlashContext";
 import { apiFetch } from "@/lib/api";
 import { getRole } from "@/lib/auth";
-import type { Lead, LeadEvent, OutreachRow, UserRow } from "@/lib/types";
+import { useLeadWorkspace } from "@/lib/hooks/useLeadWorkspace";
+import { useUsersList } from "@/lib/hooks/useUsersList";
+import { queryKeys } from "@/lib/queryKeys";
+import { API_V1 } from "@/lib/apiPaths";
 
 export default function LeadDetailPage() {
   const params = useParams<{ id: string }>();
-  const id = params.id;
+  const raw = params.id;
+  const id = typeof raw === "string" ? raw : Array.isArray(raw) ? raw[0] ?? "" : "";
   const { flash } = useFlash();
+  const qc = useQueryClient();
 
-  const [lead, setLead] = useState<Lead | null>(null);
-  const [timeline, setTimeline] = useState<LeadEvent[]>([]);
-  const [outreach, setOutreach] = useState<OutreachRow[]>([]);
-  const [users, setUsers] = useState<UserRow[]>([]);
-  const [error, setError] = useState<string | null>(null);
   const [drawer, setDrawer] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [assignee, setAssignee] = useState<string>("");
+  const [assignee, setAssignee] = useState("");
+  const [actionError, setActionError] = useState<string | null>(null);
 
-  const refresh = useCallback(async () => {
-    const [l, t, o] = await Promise.all([
-      apiFetch<Lead>(`/api/v1/leads/${id}`),
-      apiFetch<LeadEvent[]>(`/api/v1/leads/${id}/timeline`),
-      apiFetch<OutreachRow[]>(`/api/v1/leads/${id}/outreach`),
-    ]);
-    setLead(l);
-    setTimeline(t);
-    setOutreach(o);
-    setAssignee(l.assigned_to_id || "");
-  }, [id]);
+  const { data, error: loadError, isPending } = useLeadWorkspace(id || undefined);
+  const { data: users = [] } = useUsersList(isAdmin);
 
   useEffect(() => {
     setIsAdmin(getRole() === "admin");
   }, []);
 
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        await refresh();
-        if (getRole() === "admin") {
-          const u = await apiFetch<UserRow[]>(`/api/v1/users`);
-          if (!cancelled) setUsers(u);
-        }
-        if (!cancelled) setError(null);
-      } catch (e) {
-        if (!cancelled) setError(e instanceof Error ? e.message : "Failed to load lead");
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [id, refresh]);
-
-  useEffect(() => {
-    const t = window.setInterval(() => {
-      void refresh().catch(() => {});
-    }, 5000);
-    return () => window.clearInterval(t);
-  }, [refresh]);
+    if (data?.lead) setAssignee(data.lead.assigned_to_id || "");
+  }, [data?.lead]);
 
   async function postEvent(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -73,15 +44,16 @@ export default function LeadDetailPage() {
     const event_type = String(fd.get("event_type") || "email_open");
     const summary = String(fd.get("summary") || "") || null;
     try {
-      await apiFetch<Lead>(`/api/v1/leads/${id}/events`, {
+      await apiFetch(`${API_V1}/leads/${id}/events`, {
         method: "POST",
         body: JSON.stringify({ channel, event_type, summary, payload: null }),
       });
       (e.target as HTMLFormElement).reset();
-      await refresh();
+      await qc.invalidateQueries({ queryKey: queryKeys.leads.all });
+      setActionError(null);
       flash("Timeline event recorded; score may update on next recompute.", "success");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to append event");
+      setActionError(err instanceof Error ? err.message : "Failed to append event");
       flash("Could not append event.", "error");
     }
   }
@@ -89,20 +61,32 @@ export default function LeadDetailPage() {
   async function saveAssignee(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     try {
-      await apiFetch<Lead>(`/api/v1/leads/${id}/assign`, {
+      await apiFetch(`${API_V1}/leads/${id}/assign`, {
         method: "PATCH",
         body: JSON.stringify({ assigned_to_id: assignee ? assignee : null }),
       });
-      await refresh();
+      await qc.invalidateQueries({ queryKey: queryKeys.leads.all });
+      setActionError(null);
       flash("Assignment saved.", "success");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to assign");
+      setActionError(err instanceof Error ? err.message : "Failed to assign");
       flash("Assignment failed.", "error");
     }
   }
 
+  const errMsg = loadError?.message ?? actionError;
+  const lead = data?.lead;
+
+  if (!id) {
+    return <div className="p-6 text-sm text-destructive">Invalid lead URL.</div>;
+  }
+
+  if (isPending && !lead) {
+    return <div className="p-6 text-sm text-muted-foreground">Loading profile…</div>;
+  }
+
   if (!lead) {
-    return <div className="p-6 text-sm text-muted-foreground">{error || "Loading profile…"}</div>;
+    return <div className="p-6 text-sm text-destructive">{errMsg || "Lead not found."}</div>;
   }
 
   const hot = lead.tier === "hot";
@@ -111,9 +95,9 @@ export default function LeadDetailPage() {
     <div className="p-4 md:p-6">
       <LeadWorkspace
         lead={lead}
-        timeline={timeline}
-        outreach={outreach}
-        error={error}
+        timeline={data?.timeline ?? []}
+        outreach={data?.outreach ?? []}
+        error={errMsg}
         isAdmin={isAdmin}
         users={users}
         assignee={assignee}
