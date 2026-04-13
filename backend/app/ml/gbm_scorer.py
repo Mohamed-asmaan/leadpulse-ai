@@ -33,7 +33,7 @@ def _bundle():
         import numpy as np
         from sklearn.ensemble import GradientBoostingClassifier
         from sklearn.preprocessing import StandardScaler
-    except Exception as exc:  # noqa: BLE001
+    except (ImportError, ModuleNotFoundError, OSError) as exc:
         logger.warning("ML stack unavailable (%s); scoring uses rules only.", exc)
         return None
 
@@ -53,6 +53,10 @@ def _bundle():
     )
     noise = rng.normal(0.0, 0.22, size=n)
     y = ((z + noise) > 1.05).astype(np.int32)
+    # GradientBoostingClassifier requires at least one sample per class.
+    if int(y.sum()) in (0, n):
+        y = y.copy()
+        y[-1] = 1 - y[-1]
     scaler = StandardScaler()
     Xs = scaler.fit_transform(X)
     clf = GradientBoostingClassifier(

@@ -1,6 +1,7 @@
 /** First path segment → human label (Open Mercato–style backoffice breadcrumb trail). */
 export const CRUMB_LABELS: Record<string, string> = {
   overview: "Overview",
+  intelligence: "AI Studio",
   capture: "Capture",
   leads: "Lead Management",
   pipeline: "Pipeline",

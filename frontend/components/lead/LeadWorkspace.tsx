@@ -17,7 +17,7 @@ import type { Lead, LeadEvent, OutreachRow, UserRow } from "@/lib/types";
 
 const TABS = [
   { id: "overview" as const, label: "Overview" },
-  { id: "intelligence" as const, label: "Intelligence" },
+  { id: "intelligence" as const, label: "AI & scores" },
   { id: "activity" as const, label: "Activity" },
   { id: "security" as const, label: "Security & audit" },
 ];
@@ -50,7 +50,8 @@ export function LeadWorkspace({
   onOpenOutreach: () => void;
 }) {
   const router = useRouter();
-  const [tab, setTab] = useState<TabId>("overview");
+  /** Default to AI tab so scoring / ML explainability is visible without an extra click (Zoho-style intelligence first). */
+  const [tab, setTab] = useState<TabId>("intelligence");
   const hot = lead.tier === "hot";
 
   return (
@@ -149,8 +150,9 @@ export function LeadWorkspace({
             </form>
           ) : null}
           <Notice variant="default">
-            Tabs group the same record views a large CRM would use — here they map only to lead capture, scoring,
-            outreach, and audit.
+            The <strong className="text-foreground">AI & scores</strong> tab is the default: composite scoring, ML blend
+            summary, and explainable reasons from the API. Use <strong className="text-foreground">Activity</strong> to
+            log opens and visits so the AI engagement layer updates.
           </Notice>
         </div>
       ) : null}

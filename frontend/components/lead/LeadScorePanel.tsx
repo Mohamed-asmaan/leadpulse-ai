@@ -8,12 +8,19 @@ import type { Lead } from "@/lib/types";
 export function LeadScorePanel({ lead }: { lead: Lead }) {
   return (
     <section className="rounded-xl border border-border bg-muted/40 p-5 space-y-4">
-      <header>
-        <h2 className="text-sm font-semibold tracking-tight text-foreground">AI scoring</h2>
-        <p className="text-xs text-muted-foreground mt-1">
-          Backend blend: 40% ICP fit, 30% intent from capture metadata, 30% engagement from timeline (including
-          simulated opens/clicks for reproducible demos).
-        </p>
+      <header className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+        <div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <h2 className="text-sm font-semibold tracking-tight text-foreground">LeadPulse AI scoring</h2>
+            <span className="text-[10px] font-semibold uppercase tracking-wide rounded-full bg-violet-500/15 text-violet-800 dark:text-violet-200 border border-violet-500/30 px-2 py-0.5">
+              Live model
+            </span>
+          </div>
+          <p className="text-xs text-muted-foreground mt-1">
+            Rules (40% ICP fit · 30% intent · 30% engagement) plus an optional <strong className="text-foreground">ML blend</strong>{" "}
+            (gradient boosting on the server). Timeline events and simulated engagement in dev also feed the score.
+          </p>
+        </div>
       </header>
       <div className="grid grid-cols-3 gap-3">
         <ScoreTile label="Fit (40%)" value={lead.fit_score} hint="Industry + size vs ICP" />

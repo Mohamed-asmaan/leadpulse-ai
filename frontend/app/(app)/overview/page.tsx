@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Activity, Flame, Timer, Users } from "lucide-react";
 
+import { AiAutomationAssistant } from "@/components/ai/AiAutomationAssistant";
 import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { apiFetch } from "@/lib/api";
@@ -12,6 +13,7 @@ import type { FunnelMetrics, Lead } from "@/lib/types";
 
 export default function OverviewPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [leadsForAi, setLeadsForAi] = useState<Lead[]>([]);
   const [funnel, setFunnel] = useState<FunnelMetrics | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
@@ -19,8 +21,11 @@ export default function OverviewPage() {
     let cancelled = false;
     async function load() {
       try {
-        const slice = await apiFetch<Lead[]>(`/api/v1/leads?limit=8`);
-        if (!cancelled) setLeads(slice);
+        const batch = await apiFetch<Lead[]>(`/api/v1/leads?limit=50`);
+        if (!cancelled) {
+          setLeadsForAi(batch);
+          setLeads(batch.slice(0, 8));
+        }
         if (getRole() === "admin") {
           const f = await apiFetch<FunnelMetrics>(`/api/v1/analytics/funnel`);
           if (!cancelled) setFunnel(f);
@@ -43,10 +48,12 @@ export default function OverviewPage() {
       <PageHeader
         label="Command center"
         title="Operations overview"
-        description="Real-time snapshot of pipeline health. The 5-minute response window is highlighted in Lead Management to reduce revenue leakage from delayed follow-up."
+        description="Real-time snapshot of pipeline health. LeadPulse AI scores and automates outreach in the background — open AI Studio for prioritized actions and per-lead explainability."
       />
 
       {err ? <div className="text-sm text-destructive border border-border rounded-lg p-3">{err}</div> : null}
+
+      <AiAutomationAssistant leads={leadsForAi} isAdmin={getRole() === "admin"} compact />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Kpi

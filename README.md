@@ -55,6 +55,12 @@ Open [http://localhost:3000](http://localhost:3000).
 - `backend/.env.example` — database URL, JWT secret, optional webhook secret.  
 - `frontend/.env.example` — `NEXT_PUBLIC_API_URL` for the browser.
 
+## AI in the product (visible in the app)
+
+- Open **AI Studio** in the sidebar (`/intelligence`) for pipeline-wide suggestions, score stats, and wiring tips.  
+- Open any lead: the default tab is **AI & scores** (composite model, explainable reasons, ML blend text from the API).  
+- **Overview** includes a compact AI strip that links to AI Studio.
+
 ## CRM-style connectors (Meta, Google, website)
 
 - **Meta Lead Ads:** set `META_WEBHOOK_VERIFY_TOKEN` and `META_APP_SECRET`, then in [Meta for Developers](https://developers.facebook.com/) point the Page webhook callback to `{API}/api/v1/webhooks/meta` (GET verification + POST leads).  

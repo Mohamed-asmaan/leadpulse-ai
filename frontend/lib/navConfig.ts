@@ -1,4 +1,4 @@
-import { BarChart3, KanbanSquare, LayoutGrid, Plug2, Settings, UserPlus, Users } from "lucide-react";
+import { BarChart3, KanbanSquare, LayoutGrid, Plug2, Settings, Sparkles, UserPlus, Users } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 export type Role = "admin" | "sales";
@@ -12,6 +12,7 @@ export type NavItem = {
 
 export const mainNav: NavItem[] = [
   { href: "/overview", label: "Overview", icon: LayoutGrid, roles: ["admin", "sales"] },
+  { href: "/intelligence", label: "AI Studio", icon: Sparkles, roles: ["admin", "sales"] },
   { href: "/capture", label: "Capture", icon: UserPlus, roles: ["admin", "sales"] },
   { href: "/leads", label: "Lead Management", icon: Users, roles: ["admin", "sales"] },
   { href: "/pipeline", label: "Pipeline", icon: KanbanSquare, roles: ["admin", "sales"] },

@@ -1,6 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Sparkles } from "lucide-react";
 
 import { LeadsFiltersBar } from "@/components/leads/LeadsFiltersBar";
 import { LeadsTable } from "@/components/leads/LeadsTable";
@@ -67,6 +69,15 @@ export default function LeadsManagementPage() {
         label="Lead desk"
         title="Lead management"
         description="High-density grid with filters, SLA columns, and score explainability — CRM-style operations without leaving LeadPulse’s capture→score→outreach spine."
+        action={
+          <Link
+            href="/intelligence"
+            className="inline-flex h-9 items-center gap-2 rounded-md border border-violet-500/35 bg-violet-500/10 px-4 text-sm font-medium text-violet-900 dark:text-violet-100 hover:bg-violet-500/20"
+          >
+            <Sparkles className="h-4 w-4" />
+            AI Studio
+          </Link>
+        }
       />
       <LeadsFiltersBar
         filters={filters}

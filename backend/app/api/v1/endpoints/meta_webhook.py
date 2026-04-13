@@ -30,8 +30,13 @@ def _meta_signature_valid(app_secret: str, raw_body: bytes, signature_header: st
         return False
     expected = "sha256=" + hmac.new(app_secret.encode("utf-8"), raw_body, hashlib.sha256).hexdigest()
     try:
-        return hmac.compare_digest(expected.encode("ascii"), signature_header.strip().encode("ascii"))
-    except Exception:
+        sig = signature_header.strip()
+        exp_b = expected.encode("ascii")
+        sig_b = sig.encode("ascii")
+        if len(exp_b) != len(sig_b):
+            return False
+        return hmac.compare_digest(exp_b, sig_b)
+    except (UnicodeEncodeError, UnicodeDecodeError, TypeError, ValueError):
         return False
 
 

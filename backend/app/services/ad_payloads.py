@@ -66,7 +66,7 @@ def unwrap_meta_leadgen(body: dict[str, Any]) -> dict[str, Any] | None:
                 merged["context"] = {"meta_leadgen": {k: flat[k] for k in list(flat)[:30]}}
                 if merged.get("email") and merged.get("name"):
                     return merged
-    except Exception:
+    except (TypeError, ValueError, KeyError, AttributeError, IndexError):
         return None
     return None
 

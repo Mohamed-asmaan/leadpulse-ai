@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from fastapi import APIRouter, BackgroundTasks, Depends, Header, HTTPException, Request, Response, status
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
@@ -44,7 +46,11 @@ def _embed_js(api_origin: str) -> str:
     }}).then(function(r) {{
       if (r.ok) {{
         var done = form.getAttribute('data-success-message') || 'Thank you — we will be in touch shortly.';
-        form.innerHTML = '<p class=\"leadpulse-form-thanks\">' + done + '</p>';
+        while (form.firstChild) {{ form.removeChild(form.firstChild); }}
+        var p = document.createElement('p');
+        p.className = 'leadpulse-form-thanks';
+        p.textContent = done;
+        form.appendChild(p);
       }} else {{
         r.text().then(function(t) {{ alert('Could not submit: ' + t); }});
       }}
@@ -80,7 +86,7 @@ def public_website_lead(
     if expected and (x_website_form_secret or "") != expected:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid website form secret")
 
-    ctx: dict = {}
+    ctx: dict[str, Any] = {}
     if body.landing_page:
         ctx["landing_page"] = body.landing_page
     phone = (body.phone or "").strip() or None
