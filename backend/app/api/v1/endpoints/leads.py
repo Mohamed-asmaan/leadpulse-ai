@@ -32,6 +32,7 @@ from app.models.dead_lead_log import DeadLeadLog
 from app.services.alerts import maybe_trigger_alert_for_pricing_visit, maybe_trigger_alert_for_score_cross
 from app.services.dead_leads import dead_reason_for_lead, detect_dead_leads, mark_dead_with_log, revive_lead
 from app.services import lead_capture as lead_capture_service
+from app.services.audit import write_audit_log
 from app.services.async_pipeline import run_lead_pipeline_background
 from app.services.scoring import calculate_lead_score, get_last_activity_for_lead
 from app.services.tracking.timeline import list_timeline, log_event
@@ -171,6 +172,13 @@ def capture_lead(
         "api",
         "rest_capture",
     )
+    write_audit_log(
+        db,
+        action="lead_capture",
+        entity_type="lead",
+        entity_id=str(lead.id),
+        outcome="success",
+    )
     return LeadDetailOut.model_validate(lead)
 
 
@@ -196,6 +204,14 @@ def assign_lead(
     db.add(lead)
     db.commit()
     db.refresh(lead)
+    write_audit_log(
+        db,
+        action="lead_assign",
+        entity_type="lead",
+        entity_id=str(lead.id),
+        actor=_,
+        metadata_json={"assigned_to_id": str(body.assigned_to_id) if body.assigned_to_id else None},
+    )
     return LeadDetailOut.model_validate(lead)
 
 
@@ -359,6 +375,14 @@ def revive_dead_lead(
     score_row = revive_lead(db, lead_id)
     if score_row is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lead score not found")
+    write_audit_log(
+        db,
+        action="lead_revive",
+        entity_type="lead",
+        entity_id=str(lead.id),
+        actor=_,
+        metadata_json={"score_reset": 30},
+    )
     return LeadPriorityItemOut(
         lead_id=lead.id,
         name=lead.name,
@@ -382,6 +406,14 @@ def archive_all_dead_leads(
     month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     archived_this_month = (
         db.query(DeadLeadLog).filter(DeadLeadLog.marked_dead_at >= month_start).count()
+    )
+    write_audit_log(
+        db,
+        action="dead_leads_archive_all",
+        entity_type="dead_lead",
+        entity_id="bulk",
+        actor=_,
+        metadata_json={"archived_this_month": archived_this_month},
     )
     return DeadLeadSummaryOut(
         archived_this_month=archived_this_month,

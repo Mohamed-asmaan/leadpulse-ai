@@ -12,6 +12,7 @@ from app.models.lead_alert import LeadAlert
 from app.models.user import User
 from app.schemas.alerts import LeadAlertOut, LeadAlertStatsItemOut
 from app.services.alerts import avg_response_seconds_by_rep, run_escalation_pass
+from app.services.audit import write_audit_log
 
 router = APIRouter(prefix="/alerts", tags=["alerts"])
 
@@ -63,6 +64,14 @@ def respond_alert(
         row.responded_at = datetime.now(timezone.utc)
         db.add(row)
         db.commit()
+        write_audit_log(
+            db,
+            action="alert_respond",
+            entity_type="lead_alert",
+            entity_id=str(row.id),
+            actor=user,
+            metadata_json={"lead_id": str(row.lead_id)},
+        )
 
 
 @router.get("/stats", response_model=list[LeadAlertStatsItemOut], summary="Average alert response KPI")

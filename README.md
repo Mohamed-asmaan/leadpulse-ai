@@ -80,6 +80,22 @@ Do not commit real `.env` or `.env.local` files; they are ignored by Git.
 
 You can host **frontend** and **backend** on different providers while keeping this single repo (e.g. configure each host with root directory `frontend` or `backend`). Set CORS and production env vars on both sides.
 
+## Security and scalability baseline
+
+- **Rate limiting + payload guard:** API enforces per-IP request limits and rejects oversized bodies.
+- **Webhook idempotency:** `POST /api/v1/webhooks/leads` supports `Idempotency-Key` and blocks duplicate deliveries.
+- **Audit logs:** security-sensitive actions (capture, assignment, revive, alert response, archive operations) are persisted in `audit_logs`.
+- **Security headers:** CSP, frame deny, content-type protection, optional HSTS for TLS production.
+- **Environment guardrails:** `ENVIRONMENT`, JWT strength checks, webhook secret requirements, and CORS safety flags in backend config.
+- **Migrations:** Alembic is configured under `backend/alembic`. Apply using:
+
+```powershell
+cd backend
+alembic upgrade head
+```
+
+- **CI quality gates:** `.github/workflows/security-and-quality.yml` runs backend compile/security scans and frontend lint/build on pushes and PRs.
+
 ## License
 
 Add a `LICENSE` file when you choose one.

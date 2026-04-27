@@ -1,5 +1,6 @@
 from functools import lru_cache
 
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -13,10 +14,12 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "LeadPulse AI"
     API_V1_PREFIX: str = "/api/v1"
     DATABASE_URL: str = "sqlite:///./leadpulse_dev.db"
+    ENVIRONMENT: str = "development"  # development | staging | production
 
     # Comma-separated browser origins for CORS, e.g. "http://localhost:3000,https://app.example.com".
     # Empty = wildcard "*" with credentials disabled (typical local dev). Set in production.
     CORS_ALLOW_ORIGINS: str = ""
+    ALLOW_INSECURE_CORS_WILDCARD: bool = True
 
     JWT_SECRET: str = "change-me-in-production-use-long-random-secret"
     JWT_ALGORITHM: str = "HS256"
@@ -67,6 +70,34 @@ class Settings(BaseSettings):
     # --- Website lead forms (Zoho-style public embed) ---
     # If set, POST /public/website-lead requires header X-Website-Form-Secret with this value.
     WEBSITE_FORM_SHARED_SECRET: str = ""
+    REQUIRE_WEBHOOK_SECRET: bool = False
+
+    # API protection / abuse control
+    MAX_REQUEST_BODY_BYTES: int = 2_000_000  # 2 MB
+    RATE_LIMIT_REQUESTS_PER_MINUTE: int = 120
+    RATE_LIMIT_BURST_ALLOWANCE: int = 30
+    REQUIRE_IDEMPOTENCY_FOR_WEBHOOKS: bool = True
+
+    # Security response headers (HSTS should be on in TLS-only production)
+    ENABLE_HSTS: bool = False
+    HSTS_MAX_AGE_SECONDS: int = 31536000
+
+    # Logging / audit
+    ENABLE_AUDIT_LOGS: bool = True
+
+    @model_validator(mode="after")
+    def validate_security_baseline(self) -> "Settings":
+        env = (self.ENVIRONMENT or "development").strip().lower()
+        if env in {"staging", "production"}:
+            if "change-me" in self.JWT_SECRET.lower() or len(self.JWT_SECRET) < 32:
+                raise ValueError("JWT_SECRET must be a strong random value (>=32 chars) outside development.")
+            if self.CORS_ALLOW_ORIGINS.strip() in {"", "*"} and not self.ALLOW_INSECURE_CORS_WILDCARD:
+                raise ValueError("CORS wildcard is not allowed when ALLOW_INSECURE_CORS_WILDCARD is false.")
+            if self.REQUIRE_WEBHOOK_SECRET and not self.WEBHOOK_SHARED_SECRET:
+                raise ValueError("WEBHOOK_SHARED_SECRET is required when REQUIRE_WEBHOOK_SECRET=true.")
+            if self.ENABLE_HSTS and self.HSTS_MAX_AGE_SECONDS < 86400:
+                raise ValueError("HSTS_MAX_AGE_SECONDS must be >= 86400 in staging/production.")
+        return self
 
 
 @lru_cache
