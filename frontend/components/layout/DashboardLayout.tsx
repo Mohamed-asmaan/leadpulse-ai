@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { Menu, X } from "lucide-react";
 
+import { AlertPanel } from "@/components/alerts/AlertPanel";
 import { breadcrumbFromPath } from "@/components/layout/breadcrumbLabels";
 import { clearSession, getName, getRole, getToken } from "@/lib/auth";
 import { mainNav, type Role } from "@/lib/navConfig";
@@ -137,6 +138,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             </button>
           </div>
         </header>
+        <AlertPanel />
         <div className="flex-1 overflow-auto">{children}</div>
       </div>
     </div>

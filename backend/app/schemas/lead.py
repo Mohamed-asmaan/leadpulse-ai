@@ -173,3 +173,16 @@ class LeadDuplicateOut(BaseModel):
     reason: str = Field(..., description="Human-readable explanation")
     existing_lead_id: uuid.UUID
     matched_on: str = Field(default="email", description="Dedupe key (email-based)")
+
+
+class LeadPriorityItemOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    lead_id: uuid.UUID
+    name: str
+    score: int
+    grade: str
+    score_reasons: list[str] = Field(default_factory=list)
+    last_calculated: datetime
+    last_activity: datetime | None = None
+    is_dead: bool

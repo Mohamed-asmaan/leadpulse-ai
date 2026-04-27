@@ -11,6 +11,7 @@ from app.core.config import settings
 from app.ml.scoring_engine import score_lead
 from app.models.lead import Lead
 from app.models.qr_badge import QRBadgeToken
+from app.services.alerts import maybe_trigger_alert_for_score_cross
 from app.services.enrichment.service import enrich_lead_row
 from app.services.integrity import reconcile_lead_scores
 from app.services.simulation import seed_synthetic_engagement_events
@@ -67,11 +68,13 @@ def process_lead_pipeline(
     db.commit()
     db.refresh(lead)
 
+    previous_total = lead.total_score
     score_lead(db, lead)
     reconcile_lead_scores(lead)
     db.add(lead)
     db.commit()
     db.refresh(lead)
+    maybe_trigger_alert_for_score_cross(db, lead, previous_total)
 
     log_event(
         db,

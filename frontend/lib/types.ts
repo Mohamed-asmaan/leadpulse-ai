@@ -76,6 +76,51 @@ export type LeadVerification = {
   qr_verify_paths: string[];
 };
 
+export type PriorityLead = {
+  lead_id: string;
+  name: string;
+  score: number;
+  grade: "A" | "B" | "C" | "D";
+  score_reasons: string[];
+  last_calculated: string;
+  last_activity?: string | null;
+  is_dead: boolean;
+};
+
+export type LeadAlert = {
+  id: string;
+  lead_id: string;
+  lead_name: string;
+  assigned_to_id?: string | null;
+  triggered_at: string;
+  responded_at?: string | null;
+  escalated: boolean;
+  trigger_reason: string;
+  elapsed_seconds: number;
+};
+
+export type LeadAlertStats = {
+  user_id: string;
+  user_name: string;
+  avg_response_seconds?: number | null;
+  responded_count: number;
+};
+
+export type DeadLeadItem = {
+  lead_id: string;
+  lead_name: string;
+  score: number;
+  grade: "A" | "B" | "C" | "D";
+  reason: string;
+  marked_dead_at: string;
+  revived_at?: string | null;
+};
+
+export type DeadLeadSummary = {
+  archived_this_month: number;
+  estimated_hours_saved: number;
+};
+
 /** GET /api/v1/integrations/status — adapted from OM integration health (no secrets). */
 export type IntegrationStatus = {
   hunter_configured: boolean;

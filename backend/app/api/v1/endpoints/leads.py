@@ -1,7 +1,7 @@
 """Lead capture, timeline, assignment, and retrieval."""
 
 import hashlib
-from datetime import datetime
+from datetime import datetime, timezone
 from uuid import UUID
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, status
@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_db, get_current_user, require_admin
 from app.ml.scoring_engine import recompute_after_new_signal
 from app.models.lead import Lead
+from app.models.lead_score import LeadScore
 from app.models.outreach_log import OutreachLog
 from app.models.qr_badge import QRBadgeToken
 from app.models.user import User
@@ -22,11 +23,17 @@ from app.schemas.lead import (
     LeadEventIn,
     LeadEventOut,
     LeadListItem,
+    LeadPriorityItemOut,
     LeadVerificationOut,
     OutreachOut,
 )
+from app.schemas.dead_lead import DeadLeadItemOut, DeadLeadSummaryOut
+from app.models.dead_lead_log import DeadLeadLog
+from app.services.alerts import maybe_trigger_alert_for_pricing_visit, maybe_trigger_alert_for_score_cross
+from app.services.dead_leads import dead_reason_for_lead, detect_dead_leads, mark_dead_with_log, revive_lead
 from app.services import lead_capture as lead_capture_service
 from app.services.async_pipeline import run_lead_pipeline_background
+from app.services.scoring import calculate_lead_score, get_last_activity_for_lead
 from app.services.tracking.timeline import list_timeline, log_event
 
 router = APIRouter()
@@ -93,6 +100,41 @@ def list_leads(
         q = q.filter(Lead.created_at <= created_to)
     rows = q.order_by(Lead.created_at.desc()).limit(limit).all()
     return [LeadListItem.model_validate(x) for x in rows]
+
+
+@router.get(
+    "/priority-list",
+    response_model=list[LeadPriorityItemOut],
+    summary="List leads sorted by score (dead leads optional)",
+)
+def priority_list(
+    include_dead: bool = Query(default=False, description="Include leads marked as dead"),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> list[LeadPriorityItemOut]:
+    q = db.query(Lead)
+    if user.role != "admin":
+        q = q.filter(Lead.assigned_to_id == user.id)
+    leads = q.order_by(Lead.created_at.desc()).all()
+
+    items: list[LeadPriorityItemOut] = []
+    for lead in leads:
+        score_row = calculate_lead_score(db, lead.id)
+        if score_row.is_dead and not include_dead:
+            continue
+        items.append(
+            LeadPriorityItemOut(
+                lead_id=lead.id,
+                name=lead.name,
+                score=score_row.score,
+                grade=score_row.grade,
+                score_reasons=score_row.score_reasons or [],
+                last_calculated=score_row.last_calculated,
+                last_activity=get_last_activity_for_lead(db, lead.id),
+                is_dead=score_row.is_dead,
+            )
+        )
+    return sorted(items, key=lambda x: x.score, reverse=True)
 
 
 @router.post(
@@ -241,6 +283,7 @@ def append_lead_event(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lead not found")
     _ensure_visible(user, lead)
 
+    previous_score = lead.total_score
     log_event(
         db,
         lead_id=lead.id,
@@ -252,6 +295,8 @@ def append_lead_event(
     updated = recompute_after_new_signal(db, lead.id)
     if updated is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lead not found")
+    maybe_trigger_alert_for_pricing_visit(db, updated, body.event_type)
+    maybe_trigger_alert_for_score_cross(db, updated, previous_score)
     return LeadDetailOut.model_validate(updated)
 
 
@@ -266,3 +311,95 @@ def get_lead(lead_id: UUID, db: Session = Depends(get_db), user: User = Depends(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lead not found")
     _ensure_visible(user, lead)
     return LeadDetailOut.model_validate(lead)
+
+
+@router.get("/dead", response_model=list[DeadLeadItemOut], summary="List dead leads with archive reasons")
+def list_dead_leads(
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> list[DeadLeadItemOut]:
+    q = db.query(Lead).join(LeadScore, LeadScore.lead_id == Lead.id).filter(LeadScore.is_dead.is_(True))
+    if user.role != "admin":
+        q = q.filter(Lead.assigned_to_id == user.id)
+    leads = q.order_by(LeadScore.last_calculated.desc()).all()
+    out: list[DeadLeadItemOut] = []
+    for lead in leads:
+        score = db.query(LeadScore).filter(LeadScore.lead_id == lead.id).one_or_none()
+        if score is None:
+            continue
+        log = (
+            db.query(DeadLeadLog)
+            .filter(DeadLeadLog.lead_id == lead.id)
+            .order_by(DeadLeadLog.marked_dead_at.desc())
+            .first()
+        )
+        out.append(
+            DeadLeadItemOut(
+                lead_id=lead.id,
+                lead_name=lead.name,
+                score=score.score,
+                grade=score.grade,
+                reason=(log.reason if log is not None else "Marked dead by scoring rules"),
+                marked_dead_at=(log.marked_dead_at if log is not None else score.last_calculated),
+                revived_at=(log.revived_at if log is not None else None),
+            )
+        )
+    return out
+
+
+@router.post("/{lead_id}/revive", response_model=LeadPriorityItemOut, summary="Revive a dead lead")
+def revive_dead_lead(
+    lead_id: UUID,
+    db: Session = Depends(get_db),
+    _: User = Depends(require_admin),
+) -> LeadPriorityItemOut:
+    lead = db.get(Lead, lead_id)
+    if lead is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lead not found")
+    score_row = revive_lead(db, lead_id)
+    if score_row is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lead score not found")
+    return LeadPriorityItemOut(
+        lead_id=lead.id,
+        name=lead.name,
+        score=score_row.score,
+        grade=score_row.grade,
+        score_reasons=score_row.score_reasons or [],
+        last_calculated=score_row.last_calculated,
+        last_activity=get_last_activity_for_lead(db, lead.id),
+        is_dead=score_row.is_dead,
+    )
+
+
+@router.post("/dead/archive-all", response_model=DeadLeadSummaryOut, summary="Detect and archive all dead leads")
+def archive_all_dead_leads(
+    db: Session = Depends(get_db),
+    _: User = Depends(require_admin),
+) -> DeadLeadSummaryOut:
+    # Ensure score rows exist and include stage-stale criteria.
+    _ = detect_dead_leads(db)
+    now = datetime.now(timezone.utc)
+    month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    archived_this_month = (
+        db.query(DeadLeadLog).filter(DeadLeadLog.marked_dead_at >= month_start).count()
+    )
+    return DeadLeadSummaryOut(
+        archived_this_month=archived_this_month,
+        estimated_hours_saved=archived_this_month * 2,
+    )
+
+
+@router.get("/dead/summary", response_model=DeadLeadSummaryOut, summary="Dead lead archive summary")
+def dead_lead_summary(
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_user),
+) -> DeadLeadSummaryOut:
+    now = datetime.now(timezone.utc)
+    month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    archived_this_month = (
+        db.query(DeadLeadLog).filter(DeadLeadLog.marked_dead_at >= month_start).count()
+    )
+    return DeadLeadSummaryOut(
+        archived_this_month=archived_this_month,
+        estimated_hours_saved=archived_this_month * 2,
+    )
