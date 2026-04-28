@@ -80,8 +80,8 @@ export function LeadWorkspace({
             ) : null}
             <div className="rounded-lg border border-border bg-card px-3 py-2 text-right">
               <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Tier</div>
-              <div className="text-lg font-semibold capitalize text-foreground">{lead.tier || "—"}</div>
-              <div className="text-[10px] text-muted-foreground">Score {lead.total_score ?? "—"}</div>
+              <div className="text-lg font-semibold capitalize text-foreground">{lead.tier || "N/A"}</div>
+              <div className="text-[10px] text-muted-foreground">Score {lead.total_score ?? "N/A"}</div>
             </div>
           </div>
         }
@@ -97,7 +97,7 @@ export function LeadWorkspace({
               "px-3 py-2 text-sm font-medium rounded-t-md border border-b-0 transition-colors " +
               (tab === t.id
                 ? "border-border bg-card text-foreground border-b-card relative z-[1] mb-[-1px]"
-                : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/40")
+                : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted")
             }
           >
             {t.label}
@@ -211,14 +211,14 @@ export function LeadWorkspace({
             <summary className="cursor-pointer text-foreground font-medium">Capture audit (immutable payload)</summary>
             <div className="mt-3 space-y-2 text-xs text-muted-foreground">
               <div>
-                <span className="text-muted-foreground/80">Channel:</span> {lead.capture_channel || "—"}
+                <span className="text-muted-foreground/80">Channel:</span> {lead.capture_channel || "N/A"}
               </div>
               <div>
                 <span className="text-muted-foreground/80">SHA-256 (canonical capture):</span>{" "}
-                <code className="text-foreground break-all">{lead.integrity_sha256 || "—"}</code>
+                <code className="text-foreground break-all">{lead.integrity_sha256 || "N/A"}</code>
               </div>
               {lead.raw_capture_payload ? (
-                <pre className="mt-2 max-h-64 overflow-auto rounded-md bg-muted/30 p-2 text-[11px] leading-relaxed">
+                <pre className="mt-2 max-h-64 overflow-auto rounded-md bg-muted/70 p-2 text-[11px] leading-relaxed">
                   {JSON.stringify(lead.raw_capture_payload, null, 2)}
                 </pre>
               ) : null}

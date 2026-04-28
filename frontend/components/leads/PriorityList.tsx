@@ -10,10 +10,10 @@ import { API_V1 } from "@/lib/apiPaths";
 import type { PriorityLead } from "@/lib/types";
 
 function gradeBadgeClass(grade: PriorityLead["grade"]) {
-  if (grade === "A") return "bg-emerald-100 text-emerald-800 border-emerald-300";
-  if (grade === "B") return "bg-blue-100 text-blue-800 border-blue-300";
-  if (grade === "C") return "bg-amber-100 text-amber-800 border-amber-300";
-  return "bg-red-100 text-red-800 border-red-300";
+  if (grade === "A") return "bg-emerald-50 text-emerald-800 border-emerald-200";
+  if (grade === "B") return "bg-sky-50 text-sky-800 border-sky-200";
+  if (grade === "C") return "bg-amber-50 text-amber-800 border-amber-200";
+  return "bg-rose-50 text-rose-800 border-rose-200";
 }
 
 export function PriorityList() {
@@ -63,13 +63,13 @@ export function PriorityList() {
   return (
     <section className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Smart Priority List</h2>
+        <h2 className="text-lg font-semibold text-foreground">Smart Priority List</h2>
         <label className="text-sm inline-flex items-center gap-2 cursor-pointer">
           <input
             type="checkbox"
             checked={showDead}
             onChange={(e) => setShowDead(e.target.checked)}
-            className="rounded border-slate-300"
+            className="rounded border-border accent-primary"
           />
           Show Dead Leads
         </label>
@@ -82,7 +82,7 @@ export function PriorityList() {
           {ranked.map(({ rank, lead }) => {
             const isOpen = !!expanded[lead.lead_id];
             return (
-              <li key={lead.lead_id} className="rounded-lg border p-3 bg-card">
+              <li key={lead.lead_id} className="rounded-lg border border-border p-3 bg-card shadow-sm">
                 <button
                   type="button"
                   className="w-full text-left"
@@ -92,7 +92,7 @@ export function PriorityList() {
                 >
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-3">
-                      <div className="text-xl font-bold text-muted-foreground min-w-10">#{rank}</div>
+                      <div className="text-xl font-bold text-foreground/70 min-w-10">#{rank}</div>
                       <div>
                         <div className="font-medium">{lead.name}</div>
                         <div className="text-xs text-muted-foreground">
@@ -108,9 +108,9 @@ export function PriorityList() {
                     </div>
                   </div>
                   <div className="mt-3">
-                    <div className="h-2 bg-slate-200 rounded">
+                    <div className="h-2 bg-muted rounded">
                       <div
-                        className="h-2 rounded bg-violet-500"
+                        className="h-2 rounded bg-primary"
                         style={{ width: `${Math.max(0, Math.min(100, lead.score))}%` }}
                       />
                     </div>

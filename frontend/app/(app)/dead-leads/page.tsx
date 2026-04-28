@@ -59,7 +59,7 @@ export default function DeadLeadDetectorPage() {
       />
 
       {summary ? (
-        <div className="rounded-lg border bg-card px-4 py-3 text-sm">
+        <div className="rounded-lg border border-border bg-card px-4 py-3 text-sm shadow-sm">
           <span className="font-semibold">{summary.archived_this_month}</span> leads archived this month, saving your
           team approximately <span className="font-semibold">{summary.estimated_hours_saved}</span> hours of wasted
           outreach.
@@ -71,7 +71,7 @@ export default function DeadLeadDetectorPage() {
           <button
             type="button"
             onClick={() => void archiveAll()}
-            className="rounded-md border px-3 py-2 text-sm font-medium hover:bg-muted"
+            className="rounded-md border border-border bg-card px-3 py-2 text-sm font-medium hover:bg-muted"
           >
             Archive All Dead Leads
           </button>
@@ -82,9 +82,9 @@ export default function DeadLeadDetectorPage() {
       {error ? <div className="text-sm text-destructive">{error}</div> : null}
 
       {!loading ? (
-        <div className="rounded-lg border overflow-hidden">
+        <div className="rounded-lg border border-border overflow-hidden bg-card shadow-sm">
           <table className="w-full text-sm">
-            <thead className="bg-muted text-left">
+            <thead className="bg-muted/80 text-left">
               <tr>
                 <th className="px-3 py-2">Lead</th>
                 <th className="px-3 py-2">Reason</th>
@@ -95,7 +95,7 @@ export default function DeadLeadDetectorPage() {
             </thead>
             <tbody>
               {rows.map((row) => (
-                <tr key={row.lead_id} className="border-t">
+                <tr key={row.lead_id} className="border-t border-border hover:bg-muted/40">
                   <td className="px-3 py-2">{row.lead_name}</td>
                   <td className="px-3 py-2">{row.reason}</td>
                   <td className="px-3 py-2">{new Date(row.marked_dead_at).toLocaleString()}</td>
@@ -107,7 +107,7 @@ export default function DeadLeadDetectorPage() {
                       <button
                         type="button"
                         onClick={() => void revive(row.lead_id)}
-                        className="rounded border px-2 py-1 text-xs hover:bg-muted"
+                        className="rounded border border-border bg-card px-2 py-1 text-xs hover:bg-muted"
                       >
                         Revive
                       </button>

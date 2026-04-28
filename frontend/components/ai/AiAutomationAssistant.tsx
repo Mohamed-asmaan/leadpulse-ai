@@ -124,7 +124,7 @@ export function AiAutomationAssistant({
 
   return (
     <Card className="overflow-hidden border-border shadow-sm">
-      <CardHeader className="flex flex-row items-start gap-3 space-y-0 bg-muted/30 border-b border-border">
+      <CardHeader className="flex flex-row items-start gap-3 space-y-0 bg-muted/60 border-b border-border">
         <div className="p-2 rounded-lg bg-card border border-border">
           <Bot className="h-5 w-5 text-primary" />
         </div>
@@ -151,7 +151,7 @@ export function AiAutomationAssistant({
           {suggestions.slice(0, 8).map((s) => (
             <li
               key={s.id}
-              className="rounded-lg border border-border bg-card/80 p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2"
+              className="rounded-lg border border-border bg-card p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2"
             >
               <div>
                 <div className="flex items-center gap-2">
@@ -187,7 +187,7 @@ export function AiAutomationAssistant({
 
 function Stat({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-border bg-muted/30 py-2 px-2">
+    <div className="rounded-lg border border-border bg-muted/70 py-2 px-2">
       {icon}
       <div className="text-lg font-semibold tabular-nums text-foreground mt-1">{value}</div>
       <div className="text-[10px] text-muted-foreground leading-tight">{label}</div>

@@ -7,12 +7,12 @@ import type { Lead } from "@/lib/types";
 
 export function LeadScorePanel({ lead }: { lead: Lead }) {
   return (
-    <section className="rounded-xl border border-border bg-muted/40 p-5 space-y-4">
+    <section className="rounded-xl border border-border bg-muted/60 p-5 space-y-4">
       <header className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
         <div>
           <div className="flex items-center gap-2 flex-wrap">
             <h2 className="text-sm font-semibold tracking-tight text-foreground">LeadPulse AI scoring</h2>
-            <span className="text-[10px] font-semibold uppercase tracking-wide rounded-full bg-violet-500/15 text-violet-800 dark:text-violet-200 border border-violet-500/30 px-2 py-0.5">
+            <span className="text-[10px] font-semibold uppercase tracking-wide rounded-full bg-sky-50 text-sky-800 border border-sky-200 px-2 py-0.5">
               Live model
             </span>
           </div>
@@ -28,12 +28,12 @@ export function LeadScorePanel({ lead }: { lead: Lead }) {
         <ScoreTile label="Engagement (30%)" value={lead.predictive_score} hint="Opens, clicks, signals" />
       </div>
       <div
-        className="rounded-lg border border-border bg-background/60 p-3 flex items-baseline justify-between gap-3"
+        className="rounded-lg border border-border bg-background p-3 flex items-baseline justify-between gap-3"
         title={lead.score_summary || undefined}
       >
         <div className="text-xs uppercase tracking-wide text-muted-foreground">Composite</div>
-        <div className="text-2xl font-semibold tabular-nums text-primary">{lead.total_score ?? "—"}</div>
-        <div className="text-xs capitalize text-muted-foreground">{lead.tier || "—"}</div>
+        <div className="text-2xl font-semibold tabular-nums text-primary">{lead.total_score ?? "N/A"}</div>
+        <div className="text-xs capitalize text-muted-foreground">{lead.tier || "N/A"}</div>
       </div>
 
       <div className="space-y-2">
@@ -51,9 +51,9 @@ export function LeadScorePanel({ lead }: { lead: Lead }) {
 
 function ScoreTile({ label, value, hint }: { label: string; value: number | null | undefined; hint?: string }) {
   return (
-    <div className="rounded-lg border border-border bg-muted/80 p-3 text-center" title={hint}>
+    <div className="rounded-lg border border-border bg-muted p-3 text-center" title={hint}>
       <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</div>
-      <div className="text-xl font-semibold tabular-nums text-foreground mt-1">{value ?? "—"}</div>
+      <div className="text-xl font-semibold tabular-nums text-foreground mt-1">{value ?? "N/A"}</div>
     </div>
   );
 }
@@ -66,7 +66,7 @@ function ReasonBlock({ title, text }: { title: string; text: string | null | und
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm font-medium text-foreground bg-card/50 hover:bg-card"
+        className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm font-medium text-foreground bg-card hover:bg-muted/50"
       >
         {open ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
         {title}

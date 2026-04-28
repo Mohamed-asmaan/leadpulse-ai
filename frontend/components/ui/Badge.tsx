@@ -11,14 +11,14 @@ export function Badge({
 }) {
   const v =
     variant === "success"
-      ? "bg-emerald-500/15 text-emerald-200 border-emerald-500/30"
+      ? "bg-emerald-50 text-emerald-800 border-emerald-200"
       : variant === "warning"
         ? "bg-amber-50 text-amber-900 border-amber-200"
         : variant === "destructive"
-          ? "bg-destructive/15 text-destructive border-destructive/40"
+          ? "bg-rose-50 text-rose-800 border-rose-200"
           : variant === "outline"
-            ? "bg-transparent text-muted-foreground border-border"
-            : "bg-primary/15 text-primary border-primary/30";
+            ? "bg-card text-foreground border-border"
+            : "bg-sky-50 text-sky-800 border-sky-200";
   return (
     <span
       className={`inline-flex items-center rounded-md border px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${v} ${className}`.trim()}

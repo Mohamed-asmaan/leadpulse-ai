@@ -95,7 +95,7 @@ export function AlertPanel() {
   }
 
   if (error) {
-    return <div className="mx-4 md:mx-6 mt-3 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">{error}</div>;
+    return <div className="mx-4 md:mx-6 mt-3 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-800">{error}</div>;
   }
 
   if (alerts.length === 0) return null;
@@ -117,8 +117,8 @@ export function AlertPanel() {
             className={[
               "rounded-md border px-3 py-2 text-sm flex flex-wrap items-center justify-between gap-3",
               escalated
-                ? "border-red-900 bg-red-950/80 text-red-100"
-                : "border-red-500/45 bg-red-500/10 text-red-900 dark:text-red-100",
+                ? "border-rose-300 bg-rose-100 text-rose-900"
+                : "border-amber-300 bg-amber-50 text-amber-900",
             ].join(" ")}
           >
             <div className="min-w-0">
@@ -126,14 +126,14 @@ export function AlertPanel() {
                 {alert.lead_name} — {alert.trigger_reason}
               </div>
               <div className="text-xs opacity-90">
-                {escalated ? "ESCALATED - Manager Notified" : `Respond in ${mmss(remaining)}`}
+                {escalated ? "Escalated. Manager notified." : `Respond in ${mmss(remaining)}`}
               </div>
             </div>
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => void respond(alert.id, alert.lead_id)}
-                className="rounded bg-white/90 text-red-900 hover:bg-white px-3 py-1.5 text-xs font-semibold"
+                className="rounded bg-card border border-border text-foreground hover:bg-muted px-3 py-1.5 text-xs font-semibold"
               >
                 Contact Now
               </button>
