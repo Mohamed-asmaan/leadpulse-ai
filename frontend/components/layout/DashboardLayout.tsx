@@ -57,7 +57,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
       <aside
         className={[
-          "fixed z-50 inset-y-0 left-0 w-64 border-r border-border bg-card/95 backdrop-blur-md transform transition-transform md:translate-x-0 md:static md:z-0 flex flex-col",
+          "fixed z-50 inset-y-0 left-0 w-64 border-r border-border bg-card transform transition-transform md:translate-x-0 md:static md:z-0 flex flex-col",
           sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
         ].join(" ")}
       >
@@ -95,7 +95,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       </aside>
 
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="min-h-14 border-b border-border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-4 md:px-6 py-2 sm:py-0 bg-background/90 backdrop-blur">
+        <header className="min-h-14 border-b border-border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-4 md:px-6 py-2 sm:py-0 bg-background">
           <div className="flex items-center gap-3 min-w-0">
             <button
               type="button"

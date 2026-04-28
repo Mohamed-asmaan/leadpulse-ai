@@ -35,7 +35,7 @@ export default function SettingsPage() {
           explicitly assigned to them by an administrator.
         </p>
         <table className="w-full text-xs border border-border rounded-lg overflow-hidden">
-          <thead className="bg-background text-muted-foreground text-left">
+          <thead className="bg-muted text-muted-foreground text-left">
             <tr>
               <th className="px-3 py-2 font-medium">Capability</th>
               <th className="px-3 py-2 font-medium">Admin</th>

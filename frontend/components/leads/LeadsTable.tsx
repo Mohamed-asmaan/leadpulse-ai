@@ -55,7 +55,7 @@ export function LeadsTable({ leads }: Props) {
         className="rounded-xl border border-border bg-muted/30 overflow-auto max-h-[calc(100vh-16rem)]"
       >
         <div className="min-w-[900px]">
-          <div className="grid grid-cols-[1.1fr_1.3fr_1fr_0.6fr_0.7fr_0.9fr_0.9fr_0.5fr] gap-2 px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground border-b border-border bg-muted/95 sticky top-0 z-10">
+          <div className="grid grid-cols-[1.1fr_1.3fr_1fr_0.6fr_0.7fr_0.9fr_0.9fr_0.5fr] gap-2 px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground border-b border-border bg-background sticky top-0 z-20">
             <div>Name</div>
             <div>Email</div>
             <div>Source</div>
@@ -78,7 +78,7 @@ export function LeadsTable({ leads }: Props) {
                   <div className="font-medium text-foreground truncate">{lead.name}</div>
                   <div className="text-muted-foreground truncate text-xs">{lead.email}</div>
                   <div className="text-muted-foreground truncate text-xs">{lead.source}</div>
-                  <div className="text-right tabular-nums text-foreground">{lead.total_score ?? "—"}</div>
+                  <div className="text-right tabular-nums text-foreground">{lead.total_score ?? "N/A"}</div>
                   <div>
                     <TierPill tier={lead.tier} />
                   </div>
@@ -117,7 +117,7 @@ export function LeadsTable({ leads }: Props) {
 }
 
 function TierPill({ tier }: { tier: string | null | undefined }) {
-  const t = (tier || "—").toLowerCase();
+  const t = (tier || "n/a").toLowerCase();
   const cls =
     t === "hot"
       ? "bg-rose-50 text-rose-800 border-rose-200"
@@ -128,7 +128,7 @@ function TierPill({ tier }: { tier: string | null | undefined }) {
           : "bg-card text-muted-foreground border-border";
   return (
     <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold capitalize ${cls}`}>
-      {tier || "—"}
+      {tier || "N/A"}
     </span>
   );
 }

@@ -84,7 +84,7 @@ export default function DeadLeadDetectorPage() {
       {!loading ? (
         <div className="rounded-lg border overflow-hidden">
           <table className="w-full text-sm">
-            <thead className="bg-muted/60 text-left">
+            <thead className="bg-muted text-left">
               <tr>
                 <th className="px-3 py-2">Lead</th>
                 <th className="px-3 py-2">Reason</th>

@@ -3,8 +3,8 @@
 **Document type:** Supplementary reference (Second Review)  
 **Product:** LeadPulse  
 **Version:** 1.0  
-**Date:** 26 April 2026  
-**Related artifacts:** `01-Design-LeadPulse.md` through `05-Conclusion-LeadPulse.md`, `07-References-LeadPulse.md`
+**Date:** 27 April 2026  
+**Related artifacts:** `01-Design-LeadPulse.md` through `05-Conclusion-LeadPulse.md`, `07-References-LeadPulse.md`, `08-Enhancement-Improvement-Log.md`
 
 ---
 
@@ -62,6 +62,7 @@ This document gathers **appendix material** for the LeadPulse documentation set:
 | `docs/05-Conclusion-LeadPulse.md` | Project conclusion and future work. |
 | `docs/06-Appendices-LeadPulse.md` | This file — supplementary tables and indices. |
 | `docs/07-References-LeadPulse.md` | Consolidated references and bibliography. |
+| `docs/08-Enhancement-Improvement-Log.md` | Living change log with before-vs-after impact of enhancements and hardening updates. |
 | `README.md` (repo root) | Setup, run commands, high-level product description, repo pointer. |
 
 ---

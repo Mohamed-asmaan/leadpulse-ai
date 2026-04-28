@@ -14,7 +14,7 @@ export function KpiStat({
 }) {
   return (
     <div className="rounded-xl border border-border bg-card p-4 flex gap-3 shadow-sm">
-      <div className="shrink-0 p-2 rounded-lg bg-muted/50 border border-border">{icon}</div>
+      {icon}
       <div>
         <div className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</div>
         <div className="text-xl font-semibold text-foreground mt-1">{value}</div>

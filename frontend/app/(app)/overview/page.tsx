@@ -46,21 +46,21 @@ export default function OverviewPage() {
         <KpiStat
           icon={<Flame className="h-5 w-5 text-destructive" />}
           label="Hot leads (org)"
-          value={funnel != null ? String(funnel.hot) : "—"}
+          value={funnel != null ? String(funnel.hot) : "N/A"}
           hint={isAdmin ? "Admin: org-wide" : "Admin-only KPI hidden"}
         />
         <KpiStat
           icon={<Timer className="h-5 w-5 text-amber-800" />}
           label="Avg response"
           value={
-            funnel?.avg_response_seconds == null ? "—" : `${(funnel.avg_response_seconds / 60).toFixed(1)} min`
+            funnel?.avg_response_seconds == null ? "N/A" : `${(funnel.avg_response_seconds / 60).toFixed(1)} min`
           }
           hint="Automated first outreach latency"
         />
         <KpiStat
           icon={<Activity className="h-5 w-5 text-emerald-700" />}
           label="Conversion proxy"
-          value={funnel?.conversion_proxy_rate == null ? "—" : `${(funnel.conversion_proxy_rate * 100).toFixed(1)}%`}
+          value={funnel?.conversion_proxy_rate == null ? "N/A" : `${(funnel.conversion_proxy_rate * 100).toFixed(1)}%`}
           hint="Meeting-booked signal density"
         />
       </div>
@@ -83,7 +83,7 @@ export default function OverviewPage() {
                 <div className="text-xs text-muted-foreground">{l.source}</div>
               </div>
               <div className="text-right text-xs">
-                <div className="text-foreground tabular-nums">Score {l.total_score ?? "—"}</div>
+                <div className="text-foreground tabular-nums">Score {l.total_score ?? "N/A"}</div>
                 <div className="text-muted-foreground capitalize">{l.tier}</div>
               </div>
             </li>
