@@ -7,6 +7,7 @@ from collections import defaultdict, deque
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.gzip import GZipMiddleware
 
 from app.api.v1.router import api_router
 from app.bootstrap.users import ensure_seed_users
@@ -40,6 +41,7 @@ app = FastAPI(
 
 _allow_origins, _allow_credentials = _cors_config()
 _ip_windows: dict[str, deque[float]] = defaultdict(deque)
+_ip_window_last_seen: dict[str, float] = {}
 
 app.add_middleware(
     CORSMiddleware,
@@ -48,6 +50,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(GZipMiddleware, minimum_size=1024)
 
 
 @app.middleware("http")
@@ -65,6 +68,7 @@ async def security_headers_middleware(request: Request, call_next):
     ip = request.client.host if request.client else "unknown"
     now = monotonic()
     window = _ip_windows[ip]
+    _ip_window_last_seen[ip] = now
     while window and (now - window[0]) > 60:
         window.popleft()
     limit = settings.RATE_LIMIT_REQUESTS_PER_MINUTE + settings.RATE_LIMIT_BURST_ALLOWANCE
@@ -75,6 +79,14 @@ async def security_headers_middleware(request: Request, call_next):
             headers={"Retry-After": "60"},
         )
     window.append(now)
+
+    # Prevent unbounded in-memory growth for one-off client IPs.
+    if len(_ip_window_last_seen) > 10_000:
+        cutoff = now - 300
+        stale_ips = [k for k, ts in _ip_window_last_seen.items() if ts < cutoff]
+        for stale_ip in stale_ips:
+            _ip_window_last_seen.pop(stale_ip, None)
+            _ip_windows.pop(stale_ip, None)
 
     response = await call_next(request)
     response.headers.setdefault("X-Content-Type-Options", "nosniff")

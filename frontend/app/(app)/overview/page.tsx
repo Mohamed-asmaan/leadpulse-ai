@@ -18,7 +18,7 @@ export default function OverviewPage() {
     data: leadsAll = [],
     error: leadsError,
     isPending: leadsPending,
-  } = useLeadsList(LEADS_DASHBOARD_QUERY, { refetchInterval: 5000 });
+  } = useLeadsList(LEADS_DASHBOARD_QUERY, { refetchInterval: 15000 });
   const { data: funnel, error: funnelError } = useFunnelMetrics({ enabled: isAdmin });
 
   const leadsPreview = leadsAll.slice(0, 8);
@@ -29,7 +29,7 @@ export default function OverviewPage() {
       <PageHeader
         label="Command center"
         title="Operations overview"
-        description="Real-time snapshot of pipeline health. LeadPulse AI scores and automates outreach in the background — open AI Studio for prioritized actions and per-lead explainability."
+        description="Real-time snapshot of pipeline health. LeadPulse AI scores and automates outreach in the background. Open AI Studio for prioritized actions and per-lead explainability."
       />
 
       {err ? <div className="text-sm text-destructive border border-border rounded-lg p-3">{err}</div> : null}

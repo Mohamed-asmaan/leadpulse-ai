@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery, type UseQueryOptions } from "@tanstack/react-query";
+import { keepPreviousData, useQuery, type UseQueryOptions } from "@tanstack/react-query";
 
 import { apiFetch } from "@/lib/api";
 import { API_V1 } from "@/lib/apiPaths";
@@ -19,5 +19,9 @@ export function useLeadsList(queryString: string, options?: LeadsListOpts) {
     queryFn: () => apiFetch<Lead[]>(`${API_V1}/leads${queryString}`),
     enabled: options?.enabled ?? true,
     refetchInterval: options?.refetchInterval ?? false,
+    staleTime: 15_000,
+    gcTime: 5 * 60_000,
+    refetchOnWindowFocus: false,
+    placeholderData: keepPreviousData,
   });
 }

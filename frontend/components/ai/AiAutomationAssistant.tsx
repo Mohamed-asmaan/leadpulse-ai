@@ -17,7 +17,7 @@ export type AiSuggestion = {
   cta: string;
 };
 
-/** Rule-based “AI assistant” suggestions from live lead rows (no LLM — same signals the backend scores). */
+/** Rule-based AI suggestions from live lead rows using backend-aligned signals. */
 export function buildAiSuggestions(leads: Lead[], opts?: { isAdmin?: boolean }): AiSuggestion[] {
   const isAdmin = opts?.isAdmin ?? false;
   const out: AiSuggestion[] = [];
@@ -28,7 +28,7 @@ export function buildAiSuggestions(leads: Lead[], opts?: { isAdmin?: boolean }):
       id: `hot-${l.id}`,
       priority: "high",
       title: `Priority: ${l.name}`,
-      detail: "HOT tier with no automated first outreach logged yet — open workspace and send instant outreach.",
+      detail: "HOT tier with no automated first outreach logged yet. Open workspace and send instant outreach.",
       href: `/leads/${l.id}`,
       cta: "Open AI workspace",
     });
@@ -40,7 +40,7 @@ export function buildAiSuggestions(leads: Lead[], opts?: { isAdmin?: boolean }):
       id: `warm-${l.id}`,
       priority: "medium",
       title: `Nurture: ${l.name}`,
-      detail: "WARM band — review enrichment and add a timeline event (demo booked) to push toward HOT.",
+      detail: "WARM band. Review enrichment and add a timeline event (demo booked) to push toward HOT.",
       href: `/leads/${l.id}`,
       cta: "Review scores",
     });
@@ -67,7 +67,7 @@ export function buildAiSuggestions(leads: Lead[], opts?: { isAdmin?: boolean }):
       id: "pipeline",
       priority: "low",
       title: `${unscored.length} lead(s) still scoring`,
-      detail: "Background pipeline (enrich → AI score → automation) may still be running — refresh in a few seconds.",
+      detail: "Background pipeline (enrich to AI score to automation) may still be running. Refresh in a few seconds.",
       href: "/leads",
       cta: "View Lead Management",
     });
@@ -103,9 +103,9 @@ export function AiAutomationAssistant({
 
   if (compact) {
     return (
-      <div className="rounded-xl border border-violet-500/25 bg-gradient-to-br from-violet-500/10 via-background to-indigo-500/10 p-4 space-y-3">
+      <div className="rounded-xl border border-border bg-card p-4 space-y-3 shadow-sm">
         <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-          <Sparkles className="h-4 w-4 text-violet-600 shrink-0" />
+          <Sparkles className="h-4 w-4 text-primary shrink-0" />
           AI Studio
         </div>
         <p className="text-xs text-muted-foreground">
@@ -114,7 +114,7 @@ export function AiAutomationAssistant({
         </p>
         <Link
           href="/intelligence"
-          className="inline-flex text-xs font-medium text-violet-700 dark:text-violet-300 hover:underline"
+          className="inline-flex text-xs font-medium text-primary hover:underline"
         >
           Open full AI assistant →
         </Link>
@@ -123,20 +123,20 @@ export function AiAutomationAssistant({
   }
 
   return (
-    <Card className="overflow-hidden border-violet-500/20 shadow-md">
-      <CardHeader className="flex flex-row items-start gap-3 space-y-0 bg-gradient-to-r from-violet-500/10 via-transparent to-indigo-500/10 border-b border-border">
-        <div className="p-2 rounded-lg bg-violet-500/15 border border-violet-500/25">
-          <Bot className="h-5 w-5 text-violet-700 dark:text-violet-300" />
+    <Card className="overflow-hidden border-border shadow-sm">
+      <CardHeader className="flex flex-row items-start gap-3 space-y-0 bg-muted/30 border-b border-border">
+        <div className="p-2 rounded-lg bg-card border border-border">
+          <Bot className="h-5 w-5 text-primary" />
         </div>
         <div>
           <div className="flex flex-wrap items-center gap-2">
             <h2 className="text-base font-semibold tracking-tight text-foreground">AI automation assistant</h2>
-            <Badge variant="outline" className="text-[10px] font-normal border-violet-500/40 text-violet-800 dark:text-violet-200">
+            <Badge variant="outline" className="text-[10px] font-normal border-border text-muted-foreground">
               rules + ML blend
             </Badge>
           </div>
           <p className="text-xs text-muted-foreground mt-1 font-normal">
-            Suggestions use the same HOT/WARM/COLD model and outreach state as the backend — like Zoho’s playbook
+            Suggestions use the same HOT/WARM/COLD model and outreach state as the backend, similar to CRM playbook
             hints, without a separate chatbot.
           </p>
         </div>
@@ -144,7 +144,7 @@ export function AiAutomationAssistant({
       <CardContent className="p-4 space-y-4">
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-center">
           <Stat icon={<Target className="h-4 w-4 mx-auto text-emerald-600" />} label="Scored in view" value={String(scored.length)} />
-          <Stat icon={<Zap className="h-4 w-4 mx-auto text-amber-600" />} label="Avg AI score" value={avg == null ? "—" : String(avg)} />
+          <Stat icon={<Zap className="h-4 w-4 mx-auto text-amber-600" />} label="Avg AI score" value={avg == null ? "N/A" : String(avg)} />
           <Stat icon={<Flame className="h-4 w-4 mx-auto text-red-600" />} label="HOT in view" value={String(leads.filter((l) => l.tier === "hot").length)} />
         </div>
         <ul className="space-y-2">
@@ -173,7 +173,7 @@ export function AiAutomationAssistant({
               </div>
               <Link
                 href={s.href}
-                className="shrink-0 inline-flex h-8 items-center justify-center rounded-md bg-violet-600 text-white text-xs font-medium px-3 hover:bg-violet-700"
+                className="shrink-0 inline-flex h-8 items-center justify-center rounded-md bg-primary text-primary-foreground text-xs font-medium px-3 hover:bg-primary/90"
               >
                 {s.cta}
               </Link>
