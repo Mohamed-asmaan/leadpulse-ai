@@ -152,6 +152,26 @@ def tier_scores(tier: str) -> tuple[int, int, int, int]:
     )
 
 
+def build_tiers(total_leads: int) -> list[str]:
+    hot = max(8, round(total_leads * 0.28))
+    warm = max(10, round(total_leads * 0.34))
+    cold = max(8, round(total_leads * 0.26))
+    dead = max(4, total_leads - hot - warm - cold)
+    tiers = (["hot"] * hot) + (["warm"] * warm) + (["cold"] * cold) + (["dead"] * dead)
+    if len(tiers) > total_leads:
+        tiers = tiers[:total_leads]
+    elif len(tiers) < total_leads:
+        tiers.extend(["warm"] * (total_leads - len(tiers)))
+    random.shuffle(tiers)
+    return tiers
+
+
+def repeat_pool(values: list[str], total: int) -> list[str]:
+    out = [values[i % len(values)] for i in range(total)]
+    random.shuffle(out)
+    return out
+
+
 def grade_for_tier(tier: str) -> str:
     return {"hot": "A", "warm": "B", "cold": "C", "dead": "D"}[tier]
 
@@ -196,7 +216,7 @@ def reset_all(db) -> None:
     db.commit()
 
 
-def seed(reset: bool = False) -> None:
+def seed(reset: bool = False, lead_count: int = 120) -> None:
     db = SessionLocal()
     counts: dict[str, int] = {
         "users": 0,
@@ -245,19 +265,25 @@ def seed(reset: bool = False) -> None:
         sales = [u for u in users if u.role == "sales"]
         low_activity_sales = sales[-1]
 
-        print("Seeding leads")
-        tiers = ["hot"] * 8 + ["warm"] * 10 + ["cold"] * 8 + ["dead"] * 4
-        random.shuffle(tiers)
-        sources = SOURCE_POOL * 5
-        channels = CAPTURE_CHANNEL_POOL * 10
-        random.shuffle(sources)
-        random.shuffle(channels)
+        total_leads = max(100, lead_count)
+        print(f"Seeding leads ({total_leads})")
+        tiers = build_tiers(total_leads)
+        sources = repeat_pool(SOURCE_POOL, total_leads)
+        channels = repeat_pool(CAPTURE_CHANNEL_POOL, total_leads)
+        guaranteed_high_hot = max(6, round(total_leads * 0.1))
+        high_hot_assigned = 0
 
         leads: list[Lead] = []
         ninety_days_ago = now_utc() - timedelta(days=90)
-        for i in range(30):
+        for i in range(total_leads):
             tier = tiers[i]
             fit, intent, predictive, total = tier_scores(tier)
+            if tier == "hot" and high_hot_assigned < guaranteed_high_hot:
+                fit = random.randint(86, 98)
+                intent = random.randint(85, 98)
+                predictive = random.randint(86, 98)
+                total = random.randint(90, 99)
+                high_hot_assigned += 1
             created_at = random_between(ninety_days_ago, now_utc() - timedelta(days=1))
             scored_at = created_at + timedelta(hours=random.randint(1, 120))
             enriched_at = created_at + timedelta(hours=random.randint(1, 48))
@@ -349,7 +375,7 @@ def seed(reset: bool = False) -> None:
         events: list[LeadEvent] = []
         sixty_days_ago = now_utc() - timedelta(days=60)
         for lead in leads:
-            count = random.randint(3, 8)
+            count = random.randint(4, 10)
             first_time = max(lead.created_at, sixty_days_ago)
             events.append(
                 LeadEvent(
@@ -398,7 +424,7 @@ def seed(reset: bool = False) -> None:
         for lead in leads:
             if lead.id == no_outreach_lead.id:
                 continue
-            for _ in range(random.randint(2, 5)):
+            for _ in range(random.randint(2, 6)):
                 sent_at = random_between(lead.created_at + timedelta(hours=1), now_utc())
                 payload = {
                     "id": uuid.uuid4(),
@@ -421,8 +447,10 @@ def seed(reset: bool = False) -> None:
         print("Seeding lead_alerts")
         hot_leads = [lead for lead in leads if lead.tier == "hot"]
         warm_leads = [lead for lead in leads if lead.tier == "warm"]
-        alert_targets = hot_leads + random.sample(warm_leads, k=min(7, len(warm_leads)))
-        alert_targets = alert_targets[:15]
+        target_alert_count = max(15, round(total_leads * 0.22))
+        warm_pick = min(len(warm_leads), max(7, target_alert_count - len(hot_leads)))
+        alert_targets = hot_leads + random.sample(warm_leads, k=warm_pick)
+        alert_targets = alert_targets[:target_alert_count]
         alerts: list[LeadAlert] = []
         for i, lead in enumerate(alert_targets):
             triggered = now_utc() - timedelta(days=random.randint(0, 25), hours=random.randint(0, 20))
@@ -463,7 +491,8 @@ def seed(reset: bool = False) -> None:
         counts["escalations"] = len(escalations)
 
         print("Seeding dead_lead_logs")
-        dead_leads = [lead for lead in leads if lead.tier == "dead"][:4]
+        dead_log_target = max(4, round(total_leads * 0.08))
+        dead_leads = [lead for lead in leads if lead.tier == "dead"][:dead_log_target]
         dead_logs: list[DeadLeadLog] = []
         revived_lead = dead_leads[0]
         for i, lead in enumerate(dead_leads):
@@ -472,8 +501,8 @@ def seed(reset: bool = False) -> None:
             payload = {
                 "id": uuid.uuid4(),
                 "lead_id": lead.id,
-                "reason": DEAD_REASON_POOL[i],
-                "note": f"Marked dead due to {DEAD_REASON_POOL[i]} after review.",
+                "reason": DEAD_REASON_POOL[i % len(DEAD_REASON_POOL)],
+                "note": f"Marked dead due to {DEAD_REASON_POOL[i % len(DEAD_REASON_POOL)]} after review.",
                 "marked_dead_at": marked,
                 "revived_at": revived_at,
                 "created_at": marked,
@@ -489,11 +518,13 @@ def seed(reset: bool = False) -> None:
         receipts: list[WebhookReceipt] = []
         providers = ["zapier", "hubspot", "typeform", "make", "custom"]
         duplicate_prefix = f"zapier-dup-{uuid.uuid4().hex[:8]}"
-        for i in range(10):
-            if i >= 8:
+        receipt_count = max(10, round(total_leads * 0.12))
+        duplicate_count = max(2, round(receipt_count * 0.2))
+        for i in range(receipt_count):
+            if i >= (receipt_count - duplicate_count):
                 provider = "zapier"
                 status = "duplicate"
-                key = f"{duplicate_prefix}-{i-7}"
+                key = f"{duplicate_prefix}-{i-(receipt_count - duplicate_count)+1}"
             else:
                 provider = random.choice(providers)
                 status = "received"
@@ -511,7 +542,8 @@ def seed(reset: bool = False) -> None:
 
         print("Seeding qr_badge_tokens")
         tokens: list[QRBadgeToken] = []
-        hot_for_tokens = [lead for lead in leads if lead.tier == "hot"][:8]
+        token_target = max(8, round(total_leads * 0.12))
+        hot_for_tokens = [lead for lead in leads if lead.tier == "hot"][:token_target]
         for i, lead in enumerate(hot_for_tokens):
             expires_at = now_utc() - timedelta(days=5) if i == 0 else now_utc() + timedelta(days=30)
             payload = {
@@ -528,8 +560,9 @@ def seed(reset: bool = False) -> None:
 
         print("Seeding audit_logs")
         audits: list[AuditLog] = []
-        failed_rows = {5, 21, 36}
-        for i in range(40):
+        audit_count = max(40, total_leads * 2)
+        failed_rows = {5, 21, 36, 49, 73}
+        for i in range(audit_count):
             actor = random.choice(users)
             entity_type = random.choice(["lead", "user", "alert", "escalation"])
             if entity_type == "lead":
@@ -598,5 +631,6 @@ def seed(reset: bool = False) -> None:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Seed LeadPulse DB with realistic E2E data.")
     parser.add_argument("--reset", action="store_true", help="Delete existing rows before seeding.")
+    parser.add_argument("--leads", type=int, default=120, help="Number of leads to seed (minimum enforced: 100).")
     args = parser.parse_args()
-    seed(reset=args.reset)
+    seed(reset=args.reset, lead_count=args.leads)

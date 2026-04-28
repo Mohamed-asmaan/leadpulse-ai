@@ -4,6 +4,7 @@ import axios from "axios";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Bell } from "lucide-react";
 
 import { getToken } from "@/lib/auth";
 import { API_BASE } from "@/lib/config";
@@ -38,6 +39,7 @@ export function AlertPanel() {
   const [alerts, setAlerts] = useState<LeadAlert[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [tick, setTick] = useState(0);
+  const [open, setOpen] = useState(false);
   const prevIds = useRef<Set<string>>(new Set());
 
   const authHeaders = useMemo(() => {
@@ -94,56 +96,87 @@ export function AlertPanel() {
     router.push(`/leads/${leadId}`);
   }
 
-  if (error) {
-    return <div className="mx-4 md:mx-6 mt-3 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-800">{error}</div>;
-  }
-
-  if (alerts.length === 0) return null;
-
   const nowMs = Date.now() + tick * 0;
+  const visibleAlerts = alerts.slice(0, 6);
 
   return (
-    <div className="mx-4 md:mx-6 mt-3 space-y-2">
-      {alerts.map((alert) => {
-        const liveElapsed = Math.max(
-          0,
-          Math.floor((nowMs - new Date(alert.triggered_at).getTime()) / 1000),
-        );
-        const remaining = ALERT_SECONDS - liveElapsed;
-        const escalated = alert.escalated || remaining <= 0;
-        return (
-          <div
-            key={alert.id}
-            className={[
-              "rounded-md border px-3 py-2 text-sm flex flex-wrap items-center justify-between gap-3",
-              escalated
-                ? "border-rose-300 bg-rose-100 text-rose-900"
-                : "border-amber-300 bg-amber-50 text-amber-900",
-            ].join(" ")}
-          >
-            <div className="min-w-0">
-              <div className="font-semibold">
-                {alert.lead_name} — {alert.trigger_reason}
-              </div>
-              <div className="text-xs opacity-90">
-                {escalated ? "Escalated. Manager notified." : `Respond in ${mmss(remaining)}`}
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => void respond(alert.id, alert.lead_id)}
-                className="rounded bg-card border border-border text-foreground hover:bg-muted px-3 py-1.5 text-xs font-semibold"
-              >
-                Contact Now
-              </button>
-              <Link href={`/leads/${alert.lead_id}`} className="text-xs underline underline-offset-2">
-                Open lead
-              </Link>
-            </div>
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="relative rounded-md border border-border bg-card p-2 text-muted-foreground hover:bg-muted hover:text-foreground"
+        aria-label="Open notifications"
+      >
+        <Bell className="h-4 w-4" />
+        {alerts.length > 0 ? (
+          <span className="absolute -top-1.5 -right-1.5 min-w-4 h-4 px-1 rounded-full bg-rose-600 text-white text-[10px] leading-4 text-center font-semibold">
+            {alerts.length > 9 ? "9+" : alerts.length}
+          </span>
+        ) : null}
+      </button>
+
+      {open ? (
+        <div className="absolute right-0 mt-2 w-[22rem] max-w-[85vw] rounded-lg border border-border bg-card shadow-lg z-50">
+          <div className="px-3 py-2 border-b border-border flex items-center justify-between">
+            <div className="text-sm font-semibold text-foreground">Notifications</div>
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="text-xs text-muted-foreground hover:text-foreground"
+            >
+              Close
+            </button>
           </div>
-        );
-      })}
+
+          {error ? (
+            <div className="px-3 py-2 text-xs text-rose-800 bg-rose-50 border-b border-rose-200">{error}</div>
+          ) : null}
+
+          <div className="max-h-96 overflow-y-auto">
+            {visibleAlerts.length === 0 ? (
+              <div className="px-3 py-6 text-xs text-muted-foreground">No active alerts.</div>
+            ) : (
+              visibleAlerts.map((alert) => {
+                const liveElapsed = Math.max(0, Math.floor((nowMs - new Date(alert.triggered_at).getTime()) / 1000));
+                const remaining = ALERT_SECONDS - liveElapsed;
+                const escalated = alert.escalated || remaining <= 0;
+                return (
+                  <div key={alert.id} className="px-3 py-3 border-b border-border last:border-b-0 space-y-2">
+                    <div className="text-xs font-semibold text-foreground truncate">
+                      {alert.lead_name} - {alert.trigger_reason}
+                    </div>
+                    <div className={["text-[11px]", escalated ? "text-rose-700" : "text-amber-700"].join(" ")}>
+                      {escalated ? "Escalated. Manager notified." : `Respond in ${mmss(remaining)}`}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => void respond(alert.id, alert.lead_id)}
+                        className="rounded border border-border bg-card px-2 py-1 text-[11px] font-semibold text-foreground hover:bg-muted"
+                      >
+                        Contact now
+                      </button>
+                      <Link
+                        href={`/leads/${alert.lead_id}`}
+                        onClick={() => setOpen(false)}
+                        className="text-[11px] text-primary hover:underline"
+                      >
+                        Open lead
+                      </Link>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          {alerts.length > visibleAlerts.length ? (
+            <div className="px-3 py-2 border-t border-border text-[11px] text-muted-foreground">
+              Showing latest {visibleAlerts.length} of {alerts.length} alerts.
+            </div>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   );
 }

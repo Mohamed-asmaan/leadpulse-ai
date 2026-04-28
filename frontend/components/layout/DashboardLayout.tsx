@@ -121,6 +121,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             </nav>
           </div>
           <div className="flex items-center gap-3 text-sm shrink-0">
+            <AlertPanel />
             <span className="text-muted-foreground hidden sm:inline">
               {name}
               <span className="text-border"> · </span>
@@ -138,7 +139,6 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             </button>
           </div>
         </header>
-        <AlertPanel />
         <div className="flex-1 overflow-auto">{children}</div>
       </div>
     </div>
